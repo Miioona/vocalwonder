@@ -1,1 +1,55 @@
 @import "tailwindcss";
+
+/* Übergang zwischen Bibliothek und Spielmodus. */
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes screen-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes countdown {
+  from {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-screen-in {
+  animation: screen-in 260ms ease-out both;
+}
+
+.animate-screen-out {
+  animation: screen-out 200ms ease-in both;
+}
+
+.animate-countdown {
+  animation: countdown 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-screen-in,
+  .animate-screen-out,
+  .animate-countdown {
+    animation-duration: 1ms;
+  }
+}
