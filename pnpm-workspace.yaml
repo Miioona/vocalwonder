@@ -1,0 +1,14 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: false
+  sharp: false
+  unrs-resolver: false
+
+# Dependency build scripts that pnpm should not run (and not warn about).
+# Added by create-next-app for the Next.js app.
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver

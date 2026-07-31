@@ -1,0 +1,9 @@
+/** Central API configuration: base URL and endpoint paths. */
+export const CONFIG = {
+  API: {
+    BASE_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+    ENDPOINTS: {
+      HEALTH: "/health",
+    },
+  },
+} as const;
