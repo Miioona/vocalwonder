@@ -39,6 +39,11 @@ export class AudioEngine {
     this.buffer = await context.decodeAudioData(bytes);
   }
 
+  /** Das Mikrofon hängt sich in denselben Kontext — eine Uhr für Wiedergabe und Aufnahme. */
+  get audioContext(): AudioContext | undefined {
+    return this.context;
+  }
+
   get durationMs(): number {
     return (this.buffer?.duration ?? 0) * 1000;
   }
@@ -92,6 +97,18 @@ export class AudioEngine {
   resume(): void {
     if (this.playing) return;
     this.start(this.offsetSeconds * 1000);
+  }
+
+  /**
+   * Springt an eine Position. Läuft der Song gerade, spielt er dort weiter — sonst wird
+   * nur die Marke gesetzt, die `positionMs()` zurückgibt.
+   */
+  seek(toMs: number): void {
+    if (this.playing) {
+      this.start(toMs);
+      return;
+    }
+    this.offsetSeconds = Math.max(0, Math.min(toMs / 1000, this.buffer?.duration ?? 0));
   }
 
   /** Beendet die Wiedergabe, behält aber die dekodierten Daten. */

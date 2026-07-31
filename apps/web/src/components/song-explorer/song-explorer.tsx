@@ -41,7 +41,9 @@ export const SongExplorer = () => {
         </div>
       </main>
 
-      {mode === "play" && song && <PlayScreen song={song} />}
+      {/* key: Beim Songwechsel neu aufsetzen — so bekommt jeder Song eine frische Engine
+          und ein frisches Mikrofon, statt den Zustand des vorherigen zu erben. */}
+      {mode === "play" && song && <PlayScreen key={song.path} song={song} />}
     </>
   );
 };

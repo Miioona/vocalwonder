@@ -77,6 +77,9 @@ export const usePlayback = (song: AudioFile) => {
 
   const restart = () => {
     engine.stop();
+    // Sofort zurücksetzen, nicht erst beim Start: Sonst zeigt das Raster während des
+    // Countdowns noch die alte Position.
+    engine.seek(0);
     setCountdown(COUNTDOWN_FROM);
     setPhase("countdown");
   };

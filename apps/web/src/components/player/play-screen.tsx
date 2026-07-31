@@ -2,7 +2,14 @@
 
 import { useEffect, useState, type AnimationEvent } from "react";
 
+import { FinishedScreen } from "@/components/player/finished-screen";
+import { MicMeter } from "@/components/player/mic-meter";
 import { PauseMenu } from "@/components/player/pause-menu";
+import { PitchCanvas } from "@/components/player/pitch-canvas";
+import { useChart } from "@/lib/player/use-chart";
+import { useMicrophone } from "@/lib/player/use-microphone";
+import { nextSong } from "@/lib/song-explorer/playlist";
+import { useExplorerStore } from "@/stores/useExplorerStore";
 import { usePlayback } from "@/lib/player/use-playback";
 import { formatDuration, stripExtension } from "@/lib/song-explorer/audio-files";
 import type { AudioFile } from "@/lib/song-explorer/types";
@@ -18,23 +25,35 @@ const CLOCK_INTERVAL_MS = 250;
  */
 export const PlayScreen = ({ song }: { song: AudioFile }) => {
   const exit = usePlayerStore((state) => state.exit);
+  const startPlaying = usePlayerStore((state) => state.start);
+  const files = useExplorerStore((state) => state.files);
+  const selectFile = useExplorerStore((state) => state.selectFile);
   const { metadata } = useSongMetadata(song);
   const { engine, phase, countdown, error, pause, resume, restart } = usePlayback(song);
+
+  // Erst nach dem Dekodieren: Vorher gibt es keinen AudioContext, an den das Mikrofon kann.
+  const chart = useChart(song);
+  const { microphone, status: micStatus } = useMicrophone(
+    engine,
+    phase !== "loading" && phase !== "error",
+  );
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
 
+  // Läuft durchgehend, nicht nur beim Abspielen: Nach "Von vorn" muss die Anzeige auch
+  // während des Countdowns auf 0 zurückspringen.
   useEffect(() => {
-    if (phase !== "playing") return;
-
     const timer = window.setInterval(() => setPositionMs(engine.positionMs()), CLOCK_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [phase, engine]);
+  }, [engine]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      // Am Songende hat der Abschlussbildschirm eigene Knöpfe — kein Pausenmenü darüber.
+      if (phase === "finished") return;
       event.preventDefault();
 
       // Esc ist ein Umschalter: Öffnen pausiert, Schließen setzt fort. Sonst bliebe der
@@ -50,11 +69,20 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [menuOpen, pause, resume]);
+  }, [menuOpen, phase, pause, resume]);
 
   const requestExit = () => {
     engine.stop();
     setLeaving(true);
+  };
+
+  /** Vorschlag nach dem Song: der nächste aus derselben Liste, am Ende wieder von vorn. */
+  const suggestion = nextSong(files, song.path);
+
+  const playNext = (next: AudioFile) => {
+    // Auswahl mitziehen, damit die Preview beim Zurückgehen den richtigen Song zeigt.
+    selectFile(next);
+    startPlaying(next);
   };
 
   const onAnimationEnd = (event: AnimationEvent<HTMLDivElement>) => {
@@ -97,29 +125,36 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              pause();
-              setMenuOpen(true);
-            }}
-            className="shrink-0 rounded-md border border-neutral-700/60 bg-neutral-950/40 px-3 py-1.5 text-sm text-neutral-300 hover:bg-neutral-900"
-            aria-label="Menü öffnen"
-          >
-            ☰
-          </button>
+          <div className="flex shrink-0 items-center gap-3">
+            <MicMeter microphone={microphone} status={micStatus} />
+
+            <button
+              type="button"
+              onClick={() => {
+                pause();
+                setMenuOpen(true);
+              }}
+              className="rounded-md border border-neutral-700/60 bg-neutral-950/40 px-3 py-1.5 text-sm text-neutral-300 hover:bg-neutral-900"
+              aria-label="Menü öffnen"
+            >
+              ☰
+            </button>
+          </div>
         </header>
 
-        {/* Hier kommt das Canvas mit den Balken hin. */}
-        <div className="flex min-h-0 flex-1 items-center justify-center">
-          {phase === "loading" && <p className="text-neutral-400">Song wird geladen …</p>}
-          {phase === "countdown" && (
-            <p key={countdown} className="animate-countdown text-7xl font-semibold md:text-9xl">
-              {countdown}
-            </p>
-          )}
-          {phase === "finished" && <p className="text-2xl text-neutral-300">Fertig.</p>}
-          {phase === "error" && <p className="text-red-400">{error}</p>}
+        <div className="relative min-h-0 flex-1">
+          {/* Zeitraster, gesungene Linie und Playhead — die Sollbalken kommen obendrauf. */}
+          <PitchCanvas engine={engine} microphone={microphone} chart={chart} />
+
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            {phase === "loading" && <p className="text-neutral-400">Song wird geladen …</p>}
+            {phase === "countdown" && (
+              <p key={countdown} className="animate-countdown text-7xl font-semibold md:text-9xl">
+                {countdown}
+              </p>
+            )}
+            {phase === "error" && <p className="text-red-400">{error}</p>}
+          </div>
         </div>
 
         <footer className="p-4 md:p-6">
@@ -135,6 +170,15 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
           </div>
         </footer>
       </div>
+
+      {phase === "finished" && !menuOpen && (
+        <FinishedScreen
+          onRestart={restart}
+          onExit={requestExit}
+          next={suggestion}
+          onPlayNext={playNext}
+        />
+      )}
 
       {menuOpen && (
         <PauseMenu
