@@ -4,11 +4,14 @@ packages:
 
 allowBuilds:
   esbuild: false
+  protobufjs: false
   sharp: false
   unrs-resolver: false
 
 # Dependency build scripts that pnpm should not run (and not warn about).
-# Added by create-next-app for the Next.js app.
+# sharp/unrs-resolver kamen mit create-next-app, protobufjs hängt an onnxruntime-web —
+# dessen postinstall baut nur eigene CLI-Hilfsdateien, die wir nicht benutzen.
 ignoredBuiltDependencies:
+  - protobufjs
   - sharp
   - unrs-resolver

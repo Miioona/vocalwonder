@@ -40,6 +40,8 @@ interface ExplorerState {
   folder?: SubFolder;
   /** Der Song, den die Preview anzeigt. */
   selectedFile?: AudioFile;
+  /** Die Songs des offenen Ordners — Grundlage für "nächster Titel" nach dem Spielen. */
+  files: AudioFile[];
   error?: string;
 
   /** Beim Start: gemerkten Ordner aus IndexedDB holen und Berechtigung prüfen. */
@@ -50,6 +52,8 @@ interface ExplorerState {
 
   openFolder: (folder: SubFolder) => void;
   selectFile: (file: AudioFile) => void;
+  /** Wird vom Explorer gemeldet, sobald ein Ordner gelesen ist. */
+  setFiles: (files: AudioFile[]) => void;
 }
 
 const rootFolder = (handle: FileSystemDirectoryHandle): SubFolder => ({
@@ -66,6 +70,7 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
   root: undefined,
   folder: undefined,
   selectedFile: undefined,
+  files: [],
   error: undefined,
 
   restore: async () => {
@@ -132,12 +137,21 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
     try {
       await forgetSongFolder();
       clearMetadataCache();
-      set({ status: "empty", root: undefined, folder: undefined, selectedFile: undefined });
+      set({
+        status: "empty",
+        root: undefined,
+        folder: undefined,
+        selectedFile: undefined,
+        files: [],
+      });
     } catch (err) {
       set({ error: toMessage(err) });
     }
   },
 
-  openFolder: (folder) => set({ folder }),
+  // Beim Ordnerwechsel die alte Liste sofort verwerfen, sonst schlägt der Abschlussbildschirm
+  // kurzzeitig einen Song aus dem vorherigen Ordner vor.
+  openFolder: (folder) => set({ folder, files: [] }),
   selectFile: (selectedFile) => set({ selectedFile }),
+  setFiles: (files) => set({ files }),
 }));

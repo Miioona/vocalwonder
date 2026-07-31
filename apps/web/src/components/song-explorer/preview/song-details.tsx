@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { formatDuration, stripExtension } from "@/lib/song-explorer/audio-files";
 import type { AudioFile } from "@/lib/song-explorer/types";
 import { useSongMetadata } from "@/lib/song-explorer/use-song-metadata";
+import { cn } from "@/lib/utils";
+import { useAnalysisStore } from "@/stores/useAnalysisStore";
 
 interface SongDetailsProps {
   file?: AudioFile;
@@ -44,12 +48,40 @@ export const SongDetails = ({ file }: SongDetailsProps) => {
           {title}
         </p>
         <p className="truncate text-sm text-neutral-500">{subtitle}</p>
-        {file && (
-          <span className="mt-1.5 inline-block rounded-full border border-neutral-800 px-2 py-0.5 text-xs text-neutral-500">
-            {status === "loading" ? "lese Tags …" : "noch nicht analysiert"}
-          </span>
-        )}
+        {file && <AnalysisBadge file={file} tagsLoading={status === "loading"} />}
       </div>
     </>
+  );
+};
+
+/** Zeigt, ob für diesen Song schon Balken vorliegen — und wie weit die Analyse ist. */
+const AnalysisBadge = ({ file, tagsLoading }: { file: AudioFile; tagsLoading: boolean }) => {
+  const load = useAnalysisStore((state) => state.load);
+  const result = useAnalysisStore((state) => state.results[file.path]);
+  const runningPath = useAnalysisStore((state) => state.runningPath);
+  const progress = useAnalysisStore((state) => state.progress);
+
+  useEffect(() => {
+    void load(file);
+  }, [file, load]);
+
+  const running = runningPath === file.path;
+  const label = running
+    ? `analysiert … ${progress?.ratio === undefined ? "" : `${Math.round(progress.ratio * 100)} %`}`.trim()
+    : result
+      ? `Chart vorhanden · ${result.chart.phrases.length} Phrasen`
+      : tagsLoading
+        ? "lese Tags …"
+        : "noch nicht analysiert";
+
+  return (
+    <span
+      className={cn(
+        "mt-1.5 inline-block rounded-full border px-2 py-0.5 text-xs",
+        result ? "border-emerald-900 text-emerald-400" : "border-neutral-800 text-neutral-500",
+      )}
+    >
+      {label}
+    </span>
   );
 };

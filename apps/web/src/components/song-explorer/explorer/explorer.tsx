@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FileList } from "@/components/song-explorer/explorer/file-list";
 import { FolderTree } from "@/components/song-explorer/explorer/folder-tree";
@@ -33,7 +33,14 @@ export const Explorer = () => {
   /** Auf schmalen Schirmen ist immer nur eine der beiden Spalten sichtbar. */
   const [mobilePane, setMobilePane] = useState<"folders" | "files">("folders");
 
+  const setFiles = useExplorerStore((state) => state.setFiles);
+
   const { contents, status, error } = useDirectory(folder?.handle, folder?.path ?? "");
+
+  // Der Spielmodus braucht die Liste, um danach den nächsten Titel vorzuschlagen.
+  useEffect(() => {
+    if (status === "done") setFiles(contents.files);
+  }, [status, contents.files, setFiles]);
 
   if (!root || !folder) return null;
 
