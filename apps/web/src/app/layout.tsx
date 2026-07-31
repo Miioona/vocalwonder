@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="de">
-      <body className="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
+      {/* Kein Seiten-Scroll: Die App füllt das Fenster, gescrollt wird nur in den Panes. */}
+      <body className="h-dvh overflow-hidden bg-neutral-950 text-neutral-100 antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>
