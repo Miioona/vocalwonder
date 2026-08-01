@@ -23,6 +23,7 @@ export const SongPreview = () => {
       <SongDetails key={file?.path} file={file} />
       <div className="flex flex-col space-y-1 space-x-0 md:flex-row md:space-y-0 md:space-x-2">
         <Button
+          variant="outline"
           disabled={!file || Boolean(runningPath)}
           onClick={() => file && void analyse(file)}
           className="shrink-0 disabled:opacity-100"

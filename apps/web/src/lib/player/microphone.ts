@@ -12,11 +12,38 @@ import { PitchDetector } from "pitchy";
 
 /** 2048 Samples ≈ 43 ms bei 48 kHz — genug für tiefe Männerstimmen, kurz genug für Reaktion. */
 const FFT_SIZE = 2048;
-/** Unter diesem Wert ist der "Ton" meist Rauschen, Atem oder Musik aus den Lautsprechern. */
-const MIN_CLARITY = 0.85;
+/**
+ * Empfindlichkeit 0–1 auf die beiden Schwellen abgebildet, die dahinterstecken.
+ *
+ * Unempfindlich (0): nur klare, laute Töne zählen. Empfindlich (1): auch leise und
+ * unsaubere — dann rutschen aber Atem und Hintergrundgeräusche mit durch.
+ */
+const CLARITY_AT_LOW = 0.95;
+const CLARITY_AT_HIGH = 0.7;
+const VOLUME_DB_AT_LOW = -25;
+const VOLUME_DB_AT_HIGH = -55;
+
+/**
+ * Höchste Verstärkung beim Mithören. Der rohe Mikrofonpegel ist leise — wir schalten die
+ * automatische Aussteuerung des Browsers ab, weil sie die Tonhöhenerkennung ruiniert. Bei
+ * Faktor 1 (unverstärkt) geht die eigene Stimme neben der Musik unter.
+ */
+const MONITOR_MAX_GAIN = 5;
 /** Gesang außerhalb dieses Bereichs gibt es nicht — was draußen liegt, ist ein Artefakt. */
 const MIN_HZ = 65;
 const MAX_HZ = 1200;
+
+export interface MonitorSettings {
+  enabled: boolean;
+  volume: number;
+}
+
+export interface MicrophoneOptions {
+  deviceId?: string;
+  /** 0–1, siehe oben. */
+  sensitivity?: number;
+  monitor?: MonitorSettings;
+}
 
 export interface PitchSample {
   /** MIDI-Note als Kommazahl, `undefined` wenn gerade nichts Verwertbares kommt. */
@@ -38,8 +65,11 @@ export class Microphone {
   /** Explizit `ArrayBuffer`: `getFloatTimeDomainData` nimmt keine geteilten Puffer an. */
   private samples?: Float32Array<ArrayBuffer>;
   private sampleRate = 48000;
+  /** Mithören: Mikrofon → Verstärkung → Ausgabe. Lautstärke 0 heißt aus. */
+  private monitorGain?: GainNode;
+  private clarityThreshold = clarityFor(0.5);
 
-  async start(context: AudioContext): Promise<void> {
+  async start(context: AudioContext, options: MicrophoneOptions = {}): Promise<void> {
     // Die Browser-DSP muss aus: Echokompensation und Rauschunterdrückung zerstören die
     // Grundfrequenz, und die automatische Aussteuerung pumpt den Pegel. Damit wird die
     // Tonhöhenerkennung unbrauchbar.
@@ -48,6 +78,9 @@ export class Microphone {
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
+        // Kein `exact`: Ist das gemerkte Gerät nicht mehr da, nimmt der Browser das
+        // Standardgerät, statt den Zugriff komplett zu verweigern.
+        ...(options.deviceId ? { deviceId: options.deviceId } : {}),
       },
     });
 
@@ -58,15 +91,38 @@ export class Microphone {
 
     this.source = context.createMediaStreamSource(this.stream);
     this.source.connect(analyser);
-    // Bewusst **nicht** an die Ausgabe hängen, sonst hört man sich selbst mit Verzögerung.
+
+    // Mithören ist ein eigener Zweig zur Ausgabe. Standardmäßig stumm — ohne Kopfhörer
+    // gibt es Rückkopplung, und die Verzögerung wirft Sänger aus dem Takt.
+    this.monitorGain = context.createGain();
+    this.monitorGain.gain.value = 0;
+    this.source.connect(this.monitorGain);
+    this.monitorGain.connect(context.destination);
 
     this.analyser = analyser;
     this.sampleRate = context.sampleRate;
     this.samples = new Float32Array(analyser.fftSize);
 
-    const detector = PitchDetector.forFloat32Array(analyser.fftSize);
-    detector.clarityThreshold = MIN_CLARITY;
-    this.detector = detector;
+    this.detector = PitchDetector.forFloat32Array(analyser.fftSize);
+    this.setSensitivity(options.sensitivity ?? 0.5);
+    this.setMonitor(options.monitor ?? { enabled: false, volume: 0 });
+  }
+
+  /** Kann jederzeit geändert werden, auch während gesungen wird. */
+  setSensitivity(sensitivity: number): void {
+    this.clarityThreshold = clarityFor(sensitivity);
+    if (!this.detector) return;
+
+    this.detector.clarityThreshold = this.clarityThreshold;
+    this.detector.minVolumeDecibels = mix(VOLUME_DB_AT_LOW, VOLUME_DB_AT_HIGH, sensitivity);
+  }
+
+  setMonitor({ enabled, volume }: MonitorSettings): void {
+    if (!this.monitorGain) return;
+
+    // Quadratisch statt linear: unten feine Abstufung, oben genug Reserve.
+    const normalized = Math.min(Math.max(volume, 0), 1);
+    this.monitorGain.gain.value = enabled ? normalized ** 2 * MONITOR_MAX_GAIN : 0;
   }
 
   /** Liest den aktuellen Ton. Günstig genug, um pro Frame aufgerufen zu werden. */
@@ -82,21 +138,33 @@ export class Microphone {
 
     const [frequencyHz, clarity] = detector.findPitch(samples, this.sampleRate);
 
-    const usable = clarity >= MIN_CLARITY && frequencyHz >= MIN_HZ && frequencyHz <= MAX_HZ;
+    const usable =
+      clarity >= this.clarityThreshold && frequencyHz >= MIN_HZ && frequencyHz <= MAX_HZ;
     if (!usable) return { clarity, level };
 
     return { midi: hzToMidi(frequencyHz), frequencyHz, clarity, level };
   }
 
   stop(): void {
+    this.monitorGain?.disconnect();
     this.source?.disconnect();
     this.analyser?.disconnect();
     for (const track of this.stream?.getTracks() ?? []) track.stop();
 
     this.stream = undefined;
     this.source = undefined;
+    this.monitorGain = undefined;
     this.analyser = undefined;
     this.detector = undefined;
     this.samples = undefined;
   }
+}
+
+function mix(low: number, high: number, ratio: number): number {
+  const clamped = Math.min(Math.max(ratio, 0), 1);
+  return low + (high - low) * clamped;
+}
+
+function clarityFor(sensitivity: number): number {
+  return mix(CLARITY_AT_LOW, CLARITY_AT_HIGH, sensitivity);
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import type { AudioEngine } from "./audio-engine";
 import { Microphone } from "./microphone";
 
@@ -17,6 +18,9 @@ export const useMicrophone = (engine: AudioEngine, enabled: boolean) => {
   const [status, setStatus] = useState<MicrophoneStatus>("idle");
   const [error, setError] = useState<string>();
 
+  // Ein Gerätewechsel geht nur über einen neuen Stream, deshalb hängt der Start daran.
+  const inputDeviceId = useSettingsStore((state) => state.inputDeviceId);
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -28,7 +32,14 @@ export const useMicrophone = (engine: AudioEngine, enabled: boolean) => {
     void (async () => {
       setStatus("starting");
       try {
-        await microphone.start(context);
+        const { micSensitivity, monitorEnabled, monitorVolume } = useSettingsStore.getState();
+
+        await microphone.start(context, {
+          deviceId: inputDeviceId,
+          sensitivity: micSensitivity,
+          monitor: { enabled: monitorEnabled, volume: monitorVolume },
+        });
+
         if (cancelled) {
           microphone.stop();
           return;
@@ -43,6 +54,7 @@ export const useMicrophone = (engine: AudioEngine, enabled: boolean) => {
 
         setStatus(denied ? "denied" : "error");
         setError(err instanceof Error ? err.message : "Mikrofon nicht verfügbar.");
+        console.error("[mic]", err);
       }
     })();
 
@@ -50,7 +62,18 @@ export const useMicrophone = (engine: AudioEngine, enabled: boolean) => {
       cancelled = true;
       microphone.stop();
     };
-  }, [engine, enabled, microphone]);
+  }, [engine, enabled, microphone, inputDeviceId]);
+
+  // Empfindlichkeit und Mithören lassen sich im laufenden Betrieb ändern — dafür braucht es
+  // keinen neuen Stream, nur andere Schwellen bzw. eine andere Verstärkung.
+  useEffect(
+    () =>
+      useSettingsStore.subscribe((state) => {
+        microphone.setSensitivity(state.micSensitivity);
+        microphone.setMonitor({ enabled: state.monitorEnabled, volume: state.monitorVolume });
+      }),
+    [microphone],
+  );
 
   return { microphone, status, error };
 };

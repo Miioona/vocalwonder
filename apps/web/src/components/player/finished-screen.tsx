@@ -21,10 +21,10 @@ export const FinishedScreen = ({ onRestart, onExit, next, onPlayNext }: Finished
         <p className="text-center text-xl font-medium">Song zu Ende</p>
 
         <div className="flex flex-col gap-2">
-          <Button onClick={onRestart} className="w-full">
+          <Button variant="outline" onClick={onRestart} className="w-full">
             Von vorn
           </Button>
-          <Button onClick={onExit} className="w-full">
+          <Button variant="outline" onClick={onExit} className="w-full">
             Zurück zur Songübersicht
           </Button>
         </div>
