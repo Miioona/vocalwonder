@@ -1,6 +1,6 @@
 import { toNodeHandler } from "better-auth/node";
 import cookieParser from "cookie-parser";
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -12,14 +12,30 @@ import { getAuth } from "./modules/auth/auth.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { scoresRouter } from "./modules/scores/score.routes.js";
 
-/** Frontend-Adressen, die mit Cookies zugreifen dürfen. */
-const allowedOrigins = [env.WEB_ORIGIN];
+/**
+ * Frontend-Adressen, die mit Cookies zugreifen dürfen.
+ *
+ * Der Browser schickt seinen Ursprung immer ohne Schrägstrich am Ende. Ein `WEB_ORIGIN` mit
+ * Schrägstrich würde also nie passen — und `cors` lehnt dann still ab, ohne Fehler im Log.
+ */
+const allowedOrigins = [env.WEB_ORIGIN.replace(/\/+$/, "")];
+
+const corsOptions: CorsOptions = {
+  credentials: true,
+  origin: (origin, callback) => {
+    // Ohne Ursprung kommen Aufrufe ohne Browser — curl, Render-Statusprüfung.
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+
+    console.warn(`[cors] abgelehnt: ${origin} (erlaubt: ${allowedOrigins.join(", ")})`);
+    callback(null, false);
+  },
+};
 
 export function createApp(): Express {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: allowedOrigins, credentials: true }));
+  app.use(cors(corsOptions));
   app.use(morgan("dev"));
 
   // **Vor** `express.json()`: better-auth liest den Rumpf selbst. Wird er vorher geparst,
