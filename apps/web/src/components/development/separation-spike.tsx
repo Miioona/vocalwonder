@@ -167,7 +167,7 @@ export const SeparationSpike = () => {
         </label>
 
         <div>
-          <Button onClick={() => void run()} disabled={!file || running}>
+          <Button variant="outline" onClick={() => void run()} disabled={!file || running}>
             {running ? "läuft …" : "Trennung starten"}
           </Button>
         </div>
@@ -230,9 +230,13 @@ export const SeparationSpike = () => {
           />
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => play(false)}>Nur Noten anhören</Button>
-            <Button onClick={() => play(true)}>Noten + Gesang</Button>
-            <Button onClick={stopPlayback} disabled={!playback}>
+            <Button variant="outline" onClick={() => play(false)}>
+              Nur Noten anhören
+            </Button>
+            <Button variant="outline" onClick={() => play(true)}>
+              Noten + Gesang
+            </Button>
+            <Button variant="outline" onClick={stopPlayback} disabled={!playback}>
               Stopp
             </Button>
           </div>

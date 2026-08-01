@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { AudioFile } from "@/lib/song-explorer/types";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import { AudioEngine } from "./audio-engine";
 
 export type PlaybackPhase = "loading" | "countdown" | "playing" | "paused" | "finished" | "error";
@@ -32,6 +33,17 @@ export const usePlayback = (song: AudioFile) => {
         const blob = await song.handle.getFile();
         await engine.load(blob);
         if (cancelled) return;
+
+        const settings = useSettingsStore.getState();
+        void engine.setOutputDevice(settings.outputDeviceId);
+        engine.setVolume(settings.volume);
+
+        // Startwert für den Latenzausgleich, solange der User nichts eigenes eingestellt hat.
+        // Über Bluetooth meldet der Browser oft zu wenig — deshalb nur ein Vorschlag.
+        if (settings.latencyAuto && engine.outputLatencyMs > 0) {
+          settings.update({ latencyMs: engine.outputLatencyMs });
+        }
+
         setPhase("countdown");
       } catch (err) {
         if (cancelled) return;
@@ -47,6 +59,9 @@ export const usePlayback = (song: AudioFile) => {
   }, [song, engine]);
 
   useEffect(() => engine.onEnded(() => setPhase("finished")), [engine]);
+
+  // Lautstärke lässt sich im laufenden Song ändern.
+  useEffect(() => useSettingsStore.subscribe((state) => engine.setVolume(state.volume)), [engine]);
 
   useEffect(() => {
     if (phase !== "countdown") return;

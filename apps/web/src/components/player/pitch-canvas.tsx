@@ -6,6 +6,7 @@ import { allNotes, midiRange, type Chart, type Note } from "@vocalwonder/core";
 
 import type { AudioEngine } from "@/lib/player/audio-engine";
 import type { Microphone } from "@/lib/player/microphone";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import {
   DEFAULT_MIDI_HIGH,
   DEFAULT_MIDI_LOW,
@@ -90,7 +91,11 @@ export const PitchCanvas = ({
             ? sample.midi
             : smoothed + (sample.midi - smoothed) * SMOOTHING;
 
-        trail.push({ timeMs: positionMs, midi: smoothed });
+        // Der Latenzausgleich verschiebt die eigene Stimme dorthin, wo sie gesungen wurde:
+        // Was jetzt ankommt, war um `latencyMs` früher gemeint. Direkt aus dem Store gelesen,
+        // damit ein Zug am Regler sofort sichtbar wird — pro Frame ein Feldzugriff.
+        const latencyMs = useSettingsStore.getState().latencyMs;
+        trail.push({ timeMs: positionMs - latencyMs, midi: smoothed });
       }
 
       while (trail.length > 0 && trail[0].timeMs < positionMs - TRAIL_LENGTH_MS) trail.shift();

@@ -13,6 +13,9 @@ export class AudioEngine {
   private context?: AudioContext;
   private buffer?: AudioBuffer;
   private source?: AudioBufferSourceNode;
+  /** Alles läuft hierdurch — ein Punkt für die Lautstärke, statt sie pro Quelle zu setzen. */
+  private master?: GainNode;
+  private volume = 0.8;
 
   /** Kontextzeit, zu der die aktuelle Wiedergabe begann. */
   private startedAt = 0;
@@ -35,8 +38,44 @@ export class AudioEngine {
   /** Muss aus einer Nutzerinteraktion heraus laufen, sonst bleibt der Kontext suspendiert. */
   async load(blob: Blob): Promise<void> {
     const context = (this.context ??= new AudioContext());
+
+    this.master ??= context.createGain();
+    this.master.gain.value = this.volume;
+    this.master.connect(context.destination);
+
     const bytes = await blob.arrayBuffer();
     this.buffer = await context.decodeAudioData(bytes);
+  }
+
+  /** 0–1. Wirkt sofort, auch während der Song läuft. */
+  setVolume(volume: number): void {
+    this.volume = Math.min(Math.max(volume, 0), 1);
+    if (this.master) this.master.gain.value = this.volume;
+  }
+
+  /**
+   * Legt fest, über welches Gerät ausgegeben wird. Gibt es die Möglichkeit nicht (nur
+   * Chrome und Edge kennen `setSinkId`), bleibt es bei der Systemvorgabe.
+   */
+  async setOutputDevice(deviceId?: string): Promise<boolean> {
+    const context = this.context as
+      (AudioContext & { setSinkId?: (id: string) => Promise<void> }) | undefined;
+    if (!context?.setSinkId) return false;
+
+    try {
+      await context.setSinkId(deviceId ?? "");
+      return true;
+    } catch {
+      // Gerät verschwunden oder nicht erlaubt — Systemvorgabe ist der richtige Rückfall.
+      return false;
+    }
+  }
+
+  /** Die geschätzte Verzögerung der Ausgabe in Millisekunden, als Startwert für den Ausgleich. */
+  get outputLatencyMs(): number {
+    const context = this.context;
+    if (!context) return 0;
+    return Math.round((context.outputLatency || context.baseLatency || 0) * 1000);
   }
 
   /** Das Mikrofon hängt sich in denselben Kontext — eine Uhr für Wiedergabe und Aufnahme. */
@@ -71,7 +110,7 @@ export class AudioEngine {
 
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(context.destination);
+    source.connect(this.master ?? context.destination);
     source.onended = () => {
       if (this.stopping) return;
       this.playing = false;
@@ -127,6 +166,8 @@ export class AudioEngine {
   /** Beim Verlassen des Spielbildschirms — gibt den AudioContext frei. */
   dispose(): void {
     this.stop();
+    this.master?.disconnect();
+    this.master = undefined;
     this.buffer = undefined;
     void this.context?.close();
     this.context = undefined;
