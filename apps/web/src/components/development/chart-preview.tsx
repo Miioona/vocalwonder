@@ -91,7 +91,7 @@ export const ChartPreview = ({
 
   return (
     <div className="relative">
-      <canvas ref={canvasRef} className="h-48 w-full rounded-md bg-neutral-900/60" />
+      <canvas ref={canvasRef} className="h-48 w-full rounded-md bg-muted/40" />
       {positionMs && (
         <div
           ref={playheadRef}

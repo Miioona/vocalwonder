@@ -19,12 +19,14 @@ export const FolderPicker = () => {
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      {error && <span className="hidden truncate text-xs text-red-400 sm:block">{error}</span>}
+      {error && <span className="hidden truncate text-xs text-destructive sm:block">{error}</span>}
 
-      {status === "loading" && <span className="text-xs text-neutral-600">lade …</span>}
+      {status === "loading" && <span className="text-xs text-muted-foreground">lade …</span>}
 
       {status === "unsupported" && (
-        <span className="text-xs text-amber-400">Ordnerzugriff nur in Chrome und Edge</span>
+        <span className="text-xs text-amber-500 dark:text-amber-400">
+          Ordnerzugriff nur in Chrome und Edge
+        </span>
       )}
 
       {status === "empty" && <Button onClick={() => void pick()}>Ordner auswählen</Button>}
@@ -39,7 +41,7 @@ export const FolderPicker = () => {
       )}
 
       {status === "ready" && (
-        <span className="hidden truncate font-mono text-xs text-neutral-500 sm:block">
+        <span className="hidden truncate font-mono text-xs text-muted-foreground sm:block">
           {root?.name}
         </span>
       )}

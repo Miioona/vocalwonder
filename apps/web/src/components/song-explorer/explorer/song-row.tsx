@@ -27,16 +27,16 @@ export const SongRow = ({ file, selected, onSelect }: SongRowProps) => {
         onClick={() => onSelect(file)}
         className={cn(
           "flex w-full items-center gap-3 rounded-md p-2 text-left",
-          selected ? "bg-neutral-800" : "hover:bg-neutral-900",
+          selected ? "bg-accent" : "hover:bg-muted",
         )}
       >
-        <span className="size-10 shrink-0 overflow-hidden rounded bg-neutral-800">
+        <span className="size-10 shrink-0 overflow-hidden rounded bg-accent">
           {metadata?.coverUrl ? (
             // Kein next/image: Object-URLs kann der Optimizer nicht anfassen.
             // eslint-disable-next-line @next/next/no-img-element
             <img src={metadata.coverUrl} alt="" className="size-full object-cover" />
           ) : (
-            <span className="flex size-full items-center justify-center text-neutral-600">
+            <span className="flex size-full items-center justify-center text-muted-foreground">
               <svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden>
                 <path d="M13 2.5v7.7a2.3 2.3 0 1 1-1.2-2V5L7 6v6.2a2.3 2.3 0 1 1-1.2-2V4.2L13 2.5z" />
               </svg>
@@ -45,16 +45,16 @@ export const SongRow = ({ file, selected, onSelect }: SongRowProps) => {
         </span>
 
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm text-neutral-200">
+          <span className="block truncate text-sm text-foreground">
             {metadata?.title ?? stripExtension(file.name)}
           </span>
-          <span className="block truncate text-xs text-neutral-600">
+          <span className="block truncate text-xs text-muted-foreground">
             {metadata?.artist ?? "Unbekannter Artist"}
             {metadata?.album ? ` · ${metadata.album}` : ""}
           </span>
         </span>
 
-        <span className="shrink-0 font-mono text-xs text-neutral-600">
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">
           {formatDuration(metadata?.durationMs)}
         </span>
       </button>

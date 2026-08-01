@@ -32,26 +32,28 @@ export const MicMeter = ({ microphone, status }: MicMeterProps) => {
   }, [microphone, status]);
 
   if (status === "denied") {
-    return <span className="text-xs text-amber-400">Mikrofon nicht erlaubt</span>;
+    return (
+      <span className="text-xs text-amber-500 dark:text-amber-400">Mikrofon nicht erlaubt</span>
+    );
   }
 
   if (status === "error") {
-    return <span className="text-xs text-red-400">Mikrofon nicht verfügbar</span>;
+    return <span className="text-xs text-destructive">Mikrofon nicht verfügbar</span>;
   }
 
   if (status !== "running") {
-    return <span className="text-xs text-neutral-500">Mikrofon startet …</span>;
+    return <span className="text-xs text-muted-foreground">Mikrofon startet …</span>;
   }
 
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-neutral-800">
+      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-accent">
         <div
-          className="h-full rounded-full bg-emerald-400 transition-[width] duration-100"
+          className="h-full rounded-full bg-voice transition-[width] duration-100"
           style={{ width: `${Math.round(level * 100)}%` }}
         />
       </div>
-      <span className="w-8 font-mono text-xs text-emerald-400">{note ?? "–"}</span>
+      <span className="w-8 font-mono text-xs text-voice">{note ?? "–"}</span>
     </div>
   );
 };

@@ -18,7 +18,7 @@ export const SongPreview = () => {
   const percent = progress?.ratio === undefined ? undefined : Math.round(progress.ratio * 100);
 
   return (
-    <section className="flex items-center gap-4 border-b border-neutral-800 px-4 py-3 md:px-6">
+    <section className="flex items-center gap-4 border-b border-border px-4 py-3 md:px-6">
       {/* key: Beim Songwechsel neu aufsetzen, sonst blitzt kurz das alte Cover auf. */}
       <SongDetails key={file?.path} file={file} />
       <div className="flex flex-col space-y-1 space-x-0 md:flex-row md:space-y-0 md:space-x-2">

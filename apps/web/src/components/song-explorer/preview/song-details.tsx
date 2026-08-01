@@ -29,13 +29,13 @@ export const SongDetails = ({ file }: SongDetailsProps) => {
 
   return (
     <>
-      <div className="size-14 shrink-0 overflow-hidden rounded-md bg-neutral-900 md:size-20">
+      <div className="size-14 shrink-0 overflow-hidden rounded-md bg-muted md:size-20">
         {metadata?.coverUrl ? (
           // Kein next/image: Object-URLs kann der Optimizer nicht anfassen.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={metadata.coverUrl} alt="" className="size-full object-cover" />
         ) : (
-          <div className="flex size-full items-center justify-center text-neutral-700">
+          <div className="flex size-full items-center justify-center text-muted-foreground">
             <svg viewBox="0 0 16 16" className="size-6 md:size-8" fill="currentColor" aria-hidden>
               <path d="M13 2.5v7.7a2.3 2.3 0 1 1-1.2-2V5L7 6v6.2a2.3 2.3 0 1 1-1.2-2V4.2L13 2.5z" />
             </svg>
@@ -44,10 +44,10 @@ export const SongDetails = ({ file }: SongDetailsProps) => {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-neutral-100 md:text-lg" title={file?.path}>
+        <p className="truncate font-medium text-foreground md:text-lg" title={file?.path}>
           {title}
         </p>
-        <p className="truncate text-sm text-neutral-500">{subtitle}</p>
+        <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
         {file && <AnalysisBadge file={file} tagsLoading={status === "loading"} />}
       </div>
     </>
@@ -78,7 +78,7 @@ const AnalysisBadge = ({ file, tagsLoading }: { file: AudioFile; tagsLoading: bo
     <span
       className={cn(
         "mt-1.5 inline-block rounded-full border px-2 py-0.5 text-xs",
-        result ? "border-emerald-900 text-emerald-400" : "border-neutral-800 text-neutral-500",
+        result ? "border-voice/40 text-voice" : "border-border text-muted-foreground",
       )}
     >
       {label}

@@ -1,5 +1,7 @@
 import { midiToNoteName, type Note } from "@vocalwonder/core";
 
+import type { RendererColors } from "./renderer-colors";
+
 /**
  * Zeichnet einen Frame des Spielfelds. Reines Canvas, kein React — der Renderer wird 60-mal
  * pro Sekunde aufgerufen und darf nichts anfassen, was einen Re-Render auslösen könnte.
@@ -39,6 +41,8 @@ export interface TimelineFrame {
   /** Sichtbarer Tonumfang — beim Chart aus dessen Umfang, sonst der Standard. */
   midiLow: number;
   midiHigh: number;
+  /** Aus den CSS-Variablen gelesen, siehe `renderer-colors.ts`. */
+  colors: RendererColors;
 }
 
 export function drawTimeline(ctx: CanvasRenderingContext2D, frame: TimelineFrame): void {
@@ -54,7 +58,7 @@ export function drawTimeline(ctx: CanvasRenderingContext2D, frame: TimelineFrame
   drawSeconds(ctx, frame, pixelsPerMs, playheadX);
   drawNotes(ctx, frame, pixelsPerMs, playheadX);
   drawTrail(ctx, frame, pixelsPerMs, playheadX);
-  drawPlayhead(ctx, height, playheadX);
+  drawPlayhead(ctx, height, playheadX, frame.colors);
 }
 
 /** Bildet eine MIDI-Note auf eine Höhe ab — oben hoch, unten tief. */
@@ -74,23 +78,28 @@ function drawOctaves(ctx: CanvasRenderingContext2D, frame: TimelineFrame): void 
   for (let midi = firstC; midi <= midiHigh; midi += 12) {
     const y = Math.round(midiToY(midi, frame)) + 0.5;
 
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
+    ctx.strokeStyle = frame.colors.grid;
+    ctx.globalAlpha = 0.12;
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(width, y);
     ctx.stroke();
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = frame.colors.grid;
     ctx.fillText(midiToNoteName(midi), 6, y - 8);
+    ctx.globalAlpha = 1;
   }
 }
 
 function drawSeconds(
   ctx: CanvasRenderingContext2D,
-  { width, height, positionMs }: TimelineFrame,
+  frame: TimelineFrame,
   pixelsPerMs: number,
   playheadX: number,
 ): void {
+  const { width, height, positionMs } = frame;
+
   // Nur den sichtbaren Ausschnitt zeichnen, nicht den ganzen Song.
   const firstSecond = Math.floor((positionMs - playheadX / pixelsPerMs) / 1000);
   const lastSecond = Math.ceil((positionMs + (width - playheadX) / pixelsPerMs) / 1000);
@@ -102,7 +111,8 @@ function drawSeconds(
     const x = Math.round(playheadX + (second * 1000 - positionMs) * pixelsPerMs) + 0.5;
     const emphasized = second % 5 === 0;
 
-    ctx.strokeStyle = emphasized ? "rgba(255, 255, 255, 0.18)" : "rgba(255, 255, 255, 0.07)";
+    ctx.strokeStyle = frame.colors.grid;
+    ctx.globalAlpha = emphasized ? 0.28 : 0.1;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -110,9 +120,11 @@ function drawSeconds(
     ctx.stroke();
 
     if (emphasized) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = frame.colors.grid;
       ctx.fillText(label(second), x + 4, 6);
     }
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -125,7 +137,7 @@ function drawTrail(
   const { positionMs, trail } = frame;
   if (!trail || trail.length === 0) return;
 
-  ctx.strokeStyle = "rgb(52, 211, 153)";
+  ctx.strokeStyle = frame.colors.voice;
   ctx.lineWidth = 3;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
@@ -149,7 +161,7 @@ function drawTrail(
   // Der aktuelle Ton als Punkt auf dem Playhead — das Auge braucht einen Anker.
   const last = trail[trail.length - 1];
   if (last && positionMs - last.timeMs < TRAIL_GAP_MS) {
-    ctx.fillStyle = "rgb(52, 211, 153)";
+    ctx.fillStyle = frame.colors.voice;
     ctx.beginPath();
     ctx.arc(playheadX, midiToY(last.midi, frame), 5, 0, Math.PI * 2);
     ctx.fill();
@@ -183,23 +195,33 @@ function drawNotes(
     const y = midiToY(note.midi, frame) - NOTE_HEIGHT / 2;
 
     const active = positionMs >= note.startMs && positionMs <= endMs;
-    ctx.fillStyle = active ? "rgb(250, 204, 21)" : "rgba(255, 255, 255, 0.22)";
+    ctx.fillStyle = active ? frame.colors.noteActive : frame.colors.note;
+    ctx.globalAlpha = active ? 1 : 0.35;
 
     ctx.beginPath();
     ctx.roundRect(x, y, noteWidth, NOTE_HEIGHT, NOTE_HEIGHT / 2);
     ctx.fill();
   }
+
+  ctx.globalAlpha = 1;
 }
 
-function drawPlayhead(ctx: CanvasRenderingContext2D, height: number, playheadX: number): void {
+function drawPlayhead(
+  ctx: CanvasRenderingContext2D,
+  height: number,
+  playheadX: number,
+  colors: RendererColors,
+): void {
   const x = playheadX + 0.5;
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+  ctx.strokeStyle = colors.playhead;
+  ctx.globalAlpha = 0.8;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(x, 0);
   ctx.lineTo(x, height);
   ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
 function label(second: number): string {
