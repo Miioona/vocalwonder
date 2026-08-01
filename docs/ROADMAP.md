@@ -338,7 +338,15 @@ Nichts davon blockiert, aber es sollte nicht verloren gehen:
 - [ ] Preview springt einmal, sobald der erste Song gewählt ist (Pill kommt dazu) — `min-h` fehlt.
 - [ ] Artist/Titel aus dem Dateinamen ableiten, wenn die Tags leer sind
       (`130 David Guetta & Wynter Gordon - Dirty Talk`).
-- [ ] Suche im Explorer.
+- [ ] **Suche im Explorer** über Titel und Artist. Hängt an nichts, kann jederzeit kommen.
+- [ ] **Filter im Explorer** — "nur analysierte" und "Favoriten".
+      **Blockiert: erst wenn es Benutzerkonten und eine eigene Datenbank gibt** (Entscheidung
+      vom 31.07.2026). Beide Filter brauchen eine Song-Tabelle, die es dann ohnehin geben
+      muss — vorher würde man sie zweimal bauen.
+      "Nur analysierte" scheitert heute daran, dass der Cache-Schlüssel ein Hash des
+      Dateiinhalts ist: Ohne Index Pfad → Schlüssel müsste die App für jede Listenzeile die
+      Datei lesen, aus dem Filter würde ein Ladebalken. "Favoriten" braucht einen Ort zum
+      Speichern, der den Rechnerwechsel überlebt.
 
 ## Offene Entscheidung
 
