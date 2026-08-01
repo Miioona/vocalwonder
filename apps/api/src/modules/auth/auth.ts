@@ -19,6 +19,12 @@ import { nativeDb } from "../../db/connect.js";
 // Kein `ReturnType<typeof betterAuth>`: Der Typ hängt an den übergebenen Einstellungen,
 // die allgemeine Fassung passt nicht auf die konkrete.
 function createAuth() {
+  // Frontend und Backend liegen auf verschiedenen Domains (Vercel und Render). Ein Cookie mit
+  // der Voreinstellung `SameSite=Lax` würde der Browser dabei nicht mitschicken — die Sitzung
+  // wäre nach dem Anmelden sofort wieder weg. Lokal bleibt es bei den strengeren Regeln,
+  // dort sind beide Seiten `localhost`.
+  const crossSite = env.BETTER_AUTH_URL.startsWith("https://");
+
   return betterAuth({
     // Transaktionen aus: Ein einzelner MongoDB-Server ohne Replikat-Satz kann sie nicht,
     // und für Anmeldevorgänge brauchen wir sie nicht.
@@ -50,6 +56,15 @@ function createAuth() {
           }
         : {}),
     },
+
+    ...(crossSite
+      ? {
+          advanced: {
+            useSecureCookies: true,
+            defaultCookieAttributes: { sameSite: "none" as const, secure: true },
+          },
+        }
+      : {}),
 
     account: {
       // Wer sich einmal mit Google und einmal mit Discord anmeldet, soll derselbe Mensch
