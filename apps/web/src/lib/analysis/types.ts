@@ -21,6 +21,12 @@ export interface AnalysisResult {
 }
 
 export interface AnalysisMeta {
+  /**
+   * Hash der Audiodatei — derselbe Schlüssel, unter dem das Ergebnis liegt. Damit lässt sich
+   * ein Ergebnis dem Song zuordnen, ohne die Datei erneut zu lesen.
+   * Fehlt bei Ergebnissen, die vor dieser Ergänzung entstanden sind.
+   */
+  songHash?: string;
   /** Welches Trennmodell gelaufen ist. */
   model: string;
   /** Fassung der Analysekette. Hochzählen, wenn sich Ergebnisse dadurch ändern. */

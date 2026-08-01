@@ -9,6 +9,7 @@ import { PitchCanvas } from "@/components/player/pitch-canvas";
 import { useChart } from "@/lib/player/use-chart";
 import { useMicrophone } from "@/lib/player/use-microphone";
 import { usePerformance } from "@/lib/player/use-performance";
+import { useSaveScore } from "@/lib/scores/use-save-score";
 import { nextSong } from "@/lib/song-explorer/playlist";
 import { useExplorerStore } from "@/stores/useExplorerStore";
 import { usePlayback } from "@/lib/player/use-playback";
@@ -41,6 +42,14 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
 
   // Aufnahme und Bewertung laufen nur, während wirklich gesungen wird.
   const { performance, snapshot } = usePerformance(engine, microphone, chart, phase === "playing");
+
+  useSaveScore({
+    song,
+    chart,
+    snapshot,
+    durationMs: engine.durationMs,
+    finished: phase === "finished",
+  });
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
