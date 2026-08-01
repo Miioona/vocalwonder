@@ -2,6 +2,7 @@ import { stripExtension } from "@/lib/song-explorer/audio-files";
 import type { AudioFile } from "@/lib/song-explorer/types";
 import type { AnalysisMessage, AnalysisRequest } from "./analysis-worker";
 import { decodeBytesForModel } from "./audio-io";
+import { loadMetadata } from "@/lib/song-explorer/metadata-cache";
 import { readAnalysis, readFileWithKey, writeAnalysis } from "./cache";
 import type { AnalysisProgress, AnalysisResult } from "./types";
 
@@ -35,6 +36,10 @@ export function runAnalysis(
     const audio = await decodeBytesForModel(bytes);
     if (cancelled) throw new Error("Abgebrochen.");
 
+    // Titel und Artist aus den Tags, nicht aus dem Dateinamen. Der Chart trägt sie mit sich,
+    // und alles Spätere — Ergebnisse, Bestenlisten — liest sie von dort.
+    const tags = await loadMetadata(file).catch(() => undefined);
+
     worker = new Worker(new URL("./analysis-worker.ts", import.meta.url), { type: "module" });
 
     const analysis = await new Promise<AnalysisResult>((resolve, reject) => {
@@ -52,8 +57,8 @@ export function runAnalysis(
       const request: AnalysisRequest = {
         channels: audio.channels,
         durationMs: audio.durationSeconds * 1000,
-        title: stripExtension(file.name),
-        artist: "",
+        title: tags?.title ?? stripExtension(file.name),
+        artist: tags?.artist ?? "",
       };
 
       worker.postMessage(
@@ -61,6 +66,9 @@ export function runAnalysis(
         audio.channels.map((channel) => channel.buffer),
       );
     });
+
+    // Der Worker kennt den Schlüssel nicht — er bekommt nur die Kanäle. Hier ist er bekannt.
+    analysis.meta.songHash = key;
 
     await writeAnalysis(key, analysis);
     return analysis;

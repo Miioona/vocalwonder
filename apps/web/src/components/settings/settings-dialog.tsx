@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { AccountSettings } from "@/components/settings/sections/account-settings";
 import { AudioSettings } from "@/components/settings/sections/audio-settings";
 import { LibrarySettings } from "@/components/settings/sections/library-settings";
 import { ThemeSettings } from "@/components/settings/sections/theme-settings";
@@ -20,6 +21,7 @@ const SECTIONS = [
   { id: "audio", label: "Audio" },
   { id: "theme", label: "Darstellung" },
   { id: "library", label: "Bibliothek" },
+  { id: "account", label: "Konto" },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -71,6 +73,7 @@ export const SettingsDialog = () => {
             {section === "audio" && <AudioSettings />}
             {section === "theme" && <ThemeSettings />}
             {section === "library" && <LibrarySettings onFolderChange={() => setOpen(false)} />}
+            {section === "account" && <AccountSettings />}
           </div>
         </div>
       </DialogContent>

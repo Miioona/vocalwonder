@@ -14,6 +14,7 @@
     "@tanstack/react-query": "^5.101.1",
     "@vocalwonder/core": "workspace:*",
     "axios": "^1.18.1",
+    "better-auth": "^1.6.25",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "idb-keyval": "^6.3.0",

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { readAnalysis, readFileWithKey } from "@/lib/analysis/cache";
+import { readAnalysis, readFileWithKey, writeAnalysis } from "@/lib/analysis/cache";
 import { runAnalysis, type AnalysisRun } from "@/lib/analysis/run-analysis";
 import type { AnalysisProgress, AnalysisResult } from "@/lib/analysis/types";
 import type { AudioFile } from "@/lib/song-explorer/types";
@@ -66,7 +66,17 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       // damit ein umbenannter Song sein Ergebnis behält.
       const { key } = await readFileWithKey(file);
       const stored = await readAnalysis(key);
-      if (stored) set((state) => ({ results: { ...state.results, [file.path]: stored } }));
+      if (!stored) return;
+
+      // Ergebnisse von vor der Einführung des Hashes nachrüsten — der Schlüssel ist ja
+      // genau dieser Hash. Sonst ließe sich ein Ergebnis keinem Song zuordnen, und das
+      // Speichern der Punkte scheitert stillschweigend.
+      if (!stored.meta.songHash) {
+        stored.meta.songHash = key;
+        await writeAnalysis(key, stored);
+      }
+
+      set((state) => ({ results: { ...state.results, [file.path]: stored } }));
     } catch (err) {
       // Kein Ergebnis zu haben ist kein Fehler — die Preview zeigt dann "nicht analysiert".
       // Ein kaputter Cache-Zugriff wäre aber einer, deshalb in die Konsole damit.

@@ -354,12 +354,24 @@ liegen beim User. Ein Konto bringt Abgleich zwischen Geräten, Bestenlisten und 
   diesem Datenzuschnitt.
 - **Punkte werden von Anfang an gespeichert** — jedes gespielte Ergebnis, nicht nur Bestwerte.
 
-- [ ] **A1. Datenbank und Schema** — `users`, `sessions`, `settings`, `songs` (Schlüssel ist
-      der Datei-Hash), `charts`, `scores`
-- [ ] **A2. better-auth im Backend** mit Google und Discord
-- [ ] **A3. Frontend** — Anmelden, Sitzung lesen, Profil in den Einstellungen
-- [ ] **A4. Ergebnisse speichern** — jedes Spiel mit Punktzahl, Trefferquote und Datum
-- [ ] **A5. Abgleich der übrigen Daten** — **zurückgestellt, erst besprechen.** Die Frage ist
+- [x] **A1. Datenbank** — MongoDB Atlas, eine Verbindung über Mongoose; better-auth bekommt
+      den nativen Treiber aus derselben Verbindung statt einer zweiten.
+- [x] **A2. better-auth im Backend** mit Google und Discord, Kontenverknüpfung über die
+      E-Mail (ein Mensch, mehrere Anbieter). Sitzungen liegen in der Datenbank und lassen
+      sich dadurch zurückziehen.
+      **Falle:** Der Auth-Handler muss **vor** `express.json()` hängen — die Bibliothek liest
+      den Rumpf selbst.
+- [x] **A3. Frontend** — Bereich "Konto" in den Einstellungen, Anmelden über Google oder
+      Discord, Sitzung und Abmelden.
+      **Falle:** `credentials: "include"` im Auth-Client, sonst schickt der Browser das
+      Sitzungs-Cookie nicht an die andere Adresse.
+- [x] **A4. Ergebnisse speichern** — `POST /scores` je Durchgang, nicht nur Bestwerte.
+      Song erkannt am Datei-Hash, Titel und Artist liegen denormalisiert dabei, die
+      Analysefassung ebenfalls (Punkte aus verschiedenen Chart-Fassungen sind nur bedingt
+      vergleichbar). Zusammengesetzter Index für Bestenlisten je Song.
+- [ ] **A5. Bestenlisten und Verlauf anzeigen** — die Daten liegen bereits, es fehlt die
+      Ansicht.
+- [ ] **A6. Abgleich der übrigen Daten** — **zurückgestellt, erst besprechen.** Die Frage ist
       nicht "wie synchronisieren", sondern **welche Seite pro Wert gewinnt**: Gerätebezogenes
       wie Latenzausgleich, Mikrofon und Lautstärke gehört zum Browser, nicht zum Konto;
       Favoriten und Charts gehören zum Konto. Eine pauschale Regel wäre in beide Richtungen
@@ -422,7 +434,6 @@ Nichts davon blockiert, aber es sollte nicht verloren gehen:
 - [ ] `apps/web/tsconfig.json` erbt nicht von `tsconfig.base.json` (Rest von `create-next-app`).
       Dadurch gelten im Frontend weder `verbatimModuleSyntax` noch `noUnusedLocals` noch
       `noUncheckedIndexedAccess` — anders als in `api` und `core`.
-- [ ] Preview springt einmal, sobald der erste Song gewählt ist (Pill kommt dazu) — `min-h` fehlt.
 - [ ] Artist/Titel aus dem Dateinamen ableiten, wenn die Tags leer sind
       (`130 David Guetta & Wynter Gordon - Dirty Talk`).
 - [ ] **Suche im Explorer** über Titel und Artist. Hängt an nichts, kann jederzeit kommen.

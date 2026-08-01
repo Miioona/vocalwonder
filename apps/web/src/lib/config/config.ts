@@ -4,6 +4,8 @@ export const CONFIG = {
     BASE_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
     ENDPOINTS: {
       HEALTH: "/health",
+      SCORES: "/scores",
+      MY_SCORES: "/scores/me",
     },
   },
 } as const;

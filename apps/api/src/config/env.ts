@@ -4,6 +4,21 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(8000),
+
+  /** Ohne Datenbank startet der Server trotzdem — dann eben ohne Konten. */
+  MONGODB_URI: z.string().optional(),
+
+  /** Signiert die Sitzungen. Beliebige lange Zufallszeichenkette. */
+  BETTER_AUTH_SECRET: z.string().optional(),
+  /** Öffentliche Adresse dieses Servers, für die Rücksprünge der Anbieter. */
+  BETTER_AUTH_URL: z.string().default("http://localhost:8000"),
+  /** Adresse des Frontends — für CORS und den Rücksprung nach dem Anmelden. */
+  WEB_ORIGIN: z.string().default("http://localhost:3000"),
+
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  DISCORD_CLIENT_ID: z.string().optional(),
+  DISCORD_CLIENT_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
