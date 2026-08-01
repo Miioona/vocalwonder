@@ -7,10 +7,12 @@ Stand des Gerüsts: Monorepo, Express-Backend mit `/health`, Next.js-Frontend,
 `packages/core` mit Notenmodell, UltraStar-Parser und Pitch-Helfern. Zustand liegt in
 Zustand-Stores (`stores/`), Logik in `lib/song-explorer`, `lib/player` und `lib/analysis`.
 
-**Stand 31.07.2026:** Bibliothek, Spielmodus, Mikrofon und die eigene Analyse laufen.
-Ein Song lässt sich auswählen, analysieren (Trennung → Tonhöhe → Noten) und spielen —
-mit Balken im Canvas und der eigenen Stimme als Linie darüber. Was fehlt, ist die
-Bewertung und viel Feinschliff an den Analyse-Schwellen.
+**Stand 01.08.2026:** Ein Song lässt sich auswählen, analysieren (Trennung → Tonhöhe →
+Noten) und spielen — mit Balken im Canvas und der eigenen Stimme als Linie darüber.
+Dazu Einstellungen (Geräte, Lautstärke, Empfindlichkeit, Mithören, Latenzausgleich) und
+ein durchgängiges Farbsystem mit hellem und dunklem Modus.
+
+Was fehlt: die Bewertung, Text auf den Balken und Feinschliff an den Analyse-Schwellen.
 
 ---
 
