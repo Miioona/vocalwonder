@@ -19,7 +19,7 @@ export const DEFAULT_MIDI_LOW = 45;
 export const DEFAULT_MIDI_HIGH = 81;
 
 /** Dicke eines Notenbalkens in Pixeln. */
-const NOTE_HEIGHT = 12;
+const NOTE_HEIGHT = 15;
 
 /** Größere Lücke = Atempause: Dann wird die Linie unterbrochen statt durchgezogen. */
 const TRAIL_GAP_MS = 140;

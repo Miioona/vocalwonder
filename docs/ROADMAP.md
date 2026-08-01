@@ -71,7 +71,9 @@ Was fehlt: die Bewertung, Text auf den Balken und Feinschliff an den Analyse-Sch
       _Regel:_ Renderschleife liest Zeit aus der Engine und Zustand aus Refs — niemals
       React-State pro Frame.
       _Offen:_ phrasenweises Scrollen statt durchlaufender Achse (kommt mit Schritt 9).
-- [ ] **9. Text auf den Balken** — Silben, Phrasenwechsel, Scrolling.
+- [ ] **9. Lyrics und Phrasenwechsel** — **nicht auf den Balken**: Der Text läuft als eigene
+      Zeile unter oder über dem Spielfeld, die Balken bleiben leer. Dazu das phrasenweise
+      Scrollen des Spielfelds.
 
 ## Phase 4 — Mikrofon
 

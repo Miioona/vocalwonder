@@ -34,7 +34,7 @@ export interface AnalysisMeta {
 }
 
 /** Bei Änderungen an Segmentierung oder Tonhöhenverfolgung erhöhen. */
-export const ANALYSIS_VERSION = 1;
+export const ANALYSIS_VERSION = 2;
 
 export type AnalysisStage = "decode" | "download" | "session" | "inference" | "notes";
 

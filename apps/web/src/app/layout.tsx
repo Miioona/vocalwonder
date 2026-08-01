@@ -17,8 +17,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   // "dark" als Startwert: Es ist die Voreinstellung, und das Skript im Kopf korrigiert
   // vor dem ersten Zeichnen, falls der User hell eingestellt hat.
+  //
+  // Genau deshalb `suppressHydrationWarning`: Das Skript ändert die Klasse, bevor React
+  // übernimmt — für React sieht das aus wie ein Unterschied zwischen Server und Browser.
+  // Die Angabe gilt nur für dieses Element, nicht für den Inhalt darunter.
   return (
-    <html lang="de" className={cn("dark font-sans", geist.variable)}>
+    <html lang="de" suppressHydrationWarning className={cn("dark font-sans", geist.variable)}>
       <head>
         <ThemeScript />
       </head>

@@ -10,42 +10,79 @@ import { peakRms, type PitchCurve } from "./pitch-track";
  * schnell findet.
  */
 
-/** Ungerade Fensterbreite für den Medianfilter (in Rahmen à 10 ms). */
-const MEDIAN_WINDOW = 5;
-/** Unter diesem Anteil der lautesten Stelle gilt der Rahmen als Pause. */
-const SILENCE_RATIO = 0.06;
-/** Kürzere Segmente sind Erkennungsfehler, keine gesungenen Töne. */
-const MIN_NOTE_MS = 100;
-/** Lücken darunter werden überbrückt, statt eine Note zu zerhacken (Konsonanten). */
-const MAX_BRIDGE_MS = 60;
-/**
- * Wie weit die Stimme vom Ton der laufenden Note abweichen darf, ohne dass eine neue
- * beginnt (in Halbtönen). Gesang liegt selten exakt auf dem Raster und schwankt um seinen
- * Zielton — ohne diese Toleranz zerfällt jede gehaltene Note in Dutzende Schnipsel.
- */
-const PITCH_TOLERANCE = 0.7;
-/**
- * So lange muss die Abweichung anhalten, bevor sie als neuer Ton gilt. Kürzeres ist ein
- * Übergang, ein Zischlaut oder ein Erkennungsfehler.
- */
-const SWITCH_MS = 60;
-/** Ab dieser Pause beginnt eine neue Phrase — das ist später eine Textzeile. */
-const PHRASE_GAP_MS = 800;
+/** Die Stellschrauben der Segmentierung. Alle Zeiten in Millisekunden. */
+export interface Segmentation {
+  /** Fensterbreite des Medianfilters in Rahmen. Ungerade Werte sind sinnvoll. */
+  medianWindow: number;
+  /** Unter diesem Anteil der lautesten Stelle gilt ein Rahmen als Pause. */
+  silenceRatio: number;
+  /** Kürzere Segmente sind Erkennungsfehler, keine gesungenen Töne. */
+  minNoteMs: number;
+  /** Lücken darunter werden überbrückt, statt eine Note zu zerhacken (Konsonanten). */
+  maxBridgeMs: number;
+  /**
+   * Wie weit die Stimme vom Ton der laufenden Note abweichen darf, ohne dass eine neue
+   * beginnt (in Halbtönen). Ohne Toleranz zerfällt jede gehaltene Note in Schnipsel.
+   */
+  pitchTolerance: number;
+  /** So lange muss eine Abweichung anhalten, bevor sie als neuer Ton gilt. */
+  switchMs: number;
+  /** Ab dieser Pause beginnt eine neue Phrase — später eine Textzeile. */
+  phraseGapMs: number;
+  /**
+   * Alle Noten um diesen Wert nach vorn ziehen.
+   *
+   * Die Erkennung setzt Anfänge systematisch zu spät: Ein Anschlag ist erst dann ein
+   * messbarer Ton, wenn der Konsonant durch ist und das Analysefenster genug vom neuen Ton
+   * enthält. Ohne Ausgleich hinken die Balken dem Gesang hinterher.
+   */
+  onsetShiftMs: number;
+  /**
+   * Zwei aufeinanderfolgende Noten werden zu einer, wenn sie dichter beieinanderliegen als
+   * diese Lücke **und** sich um weniger als `mergeToleranceSemitones` unterscheiden.
+   *
+   * Die Lücke ist das entscheidende Kriterium: Balken, die nur entstanden sind, weil die
+   * Stimme über die Toleranzgrenze gewandert ist, stoßen lückenlos aneinander. Bewusst
+   * getrennte Töne haben eine Pause dazwischen.
+   */
+  mergeGapMs: number;
+  mergeToleranceSemitones: number;
+}
+
+export const DEFAULT_SEGMENTATION: Segmentation = {
+  medianWindow: 5,
+  silenceRatio: 0.02,
+  minNoteMs: 70,
+  maxBridgeMs: 120,
+  pitchTolerance: 0.9,
+  switchMs: 60,
+  phraseGapMs: 800,
+  onsetShiftMs: 60,
+  mergeGapMs: 40,
+  mergeToleranceSemitones: 0.8,
+};
 
 export interface BuildOptions {
   title: string;
   artist: string;
+  /** Abweichungen von den Standardwerten — die Werkbank reicht hier ihre Regler durch. */
+  segmentation?: Partial<Segmentation>;
 }
 
-export function buildChart(curve: PitchCurve, { title, artist }: BuildOptions): Chart {
-  const smoothed = smooth(curve);
-  const notes = toNotes(smoothed, curve.frameMs);
+export function buildChart(
+  curve: PitchCurve,
+  { title, artist, segmentation }: BuildOptions,
+): Chart {
+  const options: Segmentation = { ...DEFAULT_SEGMENTATION, ...segmentation };
+
+  const smoothed = smooth(curve, options);
+  const notes = toNotes(smoothed, curve.frameMs, options);
 
   return {
     title,
     artist,
     source: "analysis",
-    phrases: toPhrases(notes),
+    phrases: toPhrases(notes, options),
     meta: {},
   };
 }
@@ -54,9 +91,9 @@ export function buildChart(curve: PitchCurve, { title, artist }: BuildOptions): 
  * Medianfilter über die Halbtöne. Der Median ist hier richtig, nicht der Mittelwert:
  * Ein einzelner Ausreißer eine Oktave daneben zieht den Mittelwert mit, den Median nicht.
  */
-function smooth(curve: PitchCurve): (number | undefined)[] {
-  const silenceFloor = peakRms(curve) * SILENCE_RATIO;
-  const half = Math.floor(MEDIAN_WINDOW / 2);
+function smooth(curve: PitchCurve, options: Segmentation): (number | undefined)[] {
+  const silenceFloor = peakRms(curve) * options.silenceRatio;
+  const half = Math.floor(options.medianWindow / 2);
 
   const usable = (index: number): number | undefined => {
     const midi = curve.midi[index];
@@ -102,9 +139,9 @@ interface OpenNote {
  * ausdrücklich. Für das Halbtonraster der Anzeige wird später gerundet — die feine Auflösung
  * brauchen Bewertung und Schlauch-Modus.
  */
-function toNotes(smoothed: (number | undefined)[], frameMs: number): Note[] {
-  const switchFrames = Math.round(SWITCH_MS / frameMs);
-  const bridgeFrames = Math.round(MAX_BRIDGE_MS / frameMs);
+function toNotes(smoothed: (number | undefined)[], frameMs: number, options: Segmentation): Note[] {
+  const switchFrames = Math.round(options.switchMs / frameMs);
+  const bridgeFrames = Math.round(options.maxBridgeMs / frameMs);
 
   const notes: OpenNote[] = [];
   let current: OpenNote | undefined;
@@ -144,7 +181,7 @@ function toNotes(smoothed: (number | undefined)[], frameMs: number): Note[] {
       continue;
     }
 
-    if (Math.abs(value - current.center) <= PITCH_TOLERANCE) {
+    if (Math.abs(value - current.center) <= options.pitchTolerance) {
       current.endIndex = index;
       current.values.push(value);
       // Der Bezugston wandert langsam mit, damit ein Glissando nicht abreißt.
@@ -163,29 +200,58 @@ function toNotes(smoothed: (number | undefined)[], frameMs: number): Note[] {
 
   close();
 
-  return notes
-    .map(({ startIndex, endIndex, values }): Note => {
-      const sorted = [...values].sort((a, b) => a - b);
-      return {
-        startMs: startIndex * frameMs,
-        // Der letzte Rahmen dauert selbst noch einen Rahmen lang an.
-        durationMs: (endIndex - startIndex + 1) * frameMs,
-        midi: sorted[Math.floor(sorted.length / 2)] ?? 0,
-        text: "",
-        type: "normal",
-      };
-    })
-    .filter((note) => note.durationMs >= MIN_NOTE_MS);
+  const built = notes.map(({ startIndex, endIndex, values }): Note => {
+    const sorted = [...values].sort((a, b) => a - b);
+    return {
+      startMs: Math.max(0, startIndex * frameMs - options.onsetShiftMs),
+      // Der letzte Rahmen dauert selbst noch einen Rahmen lang an.
+      durationMs: (endIndex - startIndex + 1) * frameMs,
+      midi: sorted[Math.floor(sorted.length / 2)] ?? 0,
+      text: "",
+      type: "normal",
+    };
+  });
+
+  // Erst zusammenführen, dann aussortieren: Zwei zu kurze Schnipsel können gemeinsam eine
+  // gültige Note ergeben.
+  return merge(built, options).filter((note) => note.durationMs >= options.minNoteMs);
 }
 
-function toPhrases(notes: readonly Note[]): Phrase[] {
+/** Führt benachbarte Noten zusammen, die praktisch dieselbe Tonhöhe halten. */
+function merge(notes: readonly Note[], options: Segmentation): Note[] {
+  const merged: Note[] = [];
+
+  for (const note of notes) {
+    const previous = merged[merged.length - 1];
+    const gap = previous ? note.startMs - (previous.startMs + previous.durationMs) : Infinity;
+
+    const belongsTogether =
+      previous !== undefined &&
+      gap <= options.mergeGapMs &&
+      Math.abs(note.midi - previous.midi) <= options.mergeToleranceSemitones;
+
+    if (!previous || !belongsTogether) {
+      merged.push({ ...note });
+      continue;
+    }
+
+    // Längengewichtet: Die längere der beiden bestimmt die Tonhöhe stärker.
+    const total = previous.durationMs + note.durationMs;
+    previous.midi = (previous.midi * previous.durationMs + note.midi * note.durationMs) / total;
+    previous.durationMs = note.startMs + note.durationMs - previous.startMs;
+  }
+
+  return merged;
+}
+
+function toPhrases(notes: readonly Note[], options: Segmentation): Phrase[] {
   const phrases: Phrase[] = [];
 
   for (const note of notes) {
     const current = phrases[phrases.length - 1];
     const gap = current ? note.startMs - current.endMs : Infinity;
 
-    if (current && gap < PHRASE_GAP_MS) {
+    if (current && gap < options.phraseGapMs) {
       current.notes.push(note);
       current.endMs = note.startMs + note.durationMs;
       continue;
