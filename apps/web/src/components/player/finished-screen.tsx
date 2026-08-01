@@ -16,8 +16,8 @@ interface FinishedScreenProps {
 /** Was nach dem letzten Ton passiert — nie eine Sackgasse. */
 export const FinishedScreen = ({ onRestart, onExit, next, onPlayNext }: FinishedScreenProps) => {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/70 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-neutral-800 bg-neutral-950/90 p-5">
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
+      <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-popover/95 p-5">
         <p className="text-center text-xl font-medium">Song zu Ende</p>
 
         <div className="flex flex-col gap-2">
@@ -39,15 +39,15 @@ const NextSong = ({ song, onPlay }: { song: AudioFile; onPlay: () => void }) => 
   const { metadata } = useSongMetadata(song);
 
   return (
-    <div className="flex flex-col gap-2 border-t border-neutral-800 pt-4">
-      <p className="text-xs text-neutral-500">Als Nächstes</p>
+    <div className="flex flex-col gap-2 border-t border-border pt-4">
+      <p className="text-xs text-muted-foreground">Als Nächstes</p>
 
       <button
         type="button"
         onClick={onPlay}
-        className="flex items-center gap-3 rounded-md p-2 text-left hover:bg-neutral-900"
+        className="flex items-center gap-3 rounded-md p-2 text-left hover:bg-muted"
       >
-        <span className="size-10 shrink-0 overflow-hidden rounded bg-neutral-800">
+        <span className="size-10 shrink-0 overflow-hidden rounded bg-accent">
           {metadata?.coverUrl && (
             // Kein next/image: Object-URLs kann der Optimizer nicht anfassen.
             // eslint-disable-next-line @next/next/no-img-element
@@ -56,15 +56,15 @@ const NextSong = ({ song, onPlay }: { song: AudioFile; onPlay: () => void }) => 
         </span>
 
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm text-neutral-200">
+          <span className="block truncate text-sm text-foreground">
             {metadata?.title ?? stripExtension(song.name)}
           </span>
-          <span className="block truncate text-xs text-neutral-600">
+          <span className="block truncate text-xs text-muted-foreground">
             {metadata?.artist ?? "Unbekannter Artist"}
           </span>
         </span>
 
-        <span className="shrink-0 text-neutral-500">▶</span>
+        <span className="shrink-0 text-muted-foreground">▶</span>
       </button>
     </div>
   );

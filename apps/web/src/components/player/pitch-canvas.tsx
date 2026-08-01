@@ -13,6 +13,7 @@ import {
   drawTimeline,
   type PitchPoint,
 } from "@/lib/player/renderer";
+import { readRendererColors } from "@/lib/player/renderer-colors";
 
 /** So weit reicht die gesungene Linie zurück — mehr ist links vom Bild sowieso weg. */
 const TRAIL_LENGTH_MS = 8000;
@@ -63,9 +64,23 @@ export const PitchCanvas = ({
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     };
 
+    // Die Farben kommen aus den CSS-Variablen. Einmal lesen, nicht pro Frame —
+    // `getComputedStyle` erzwingt sonst 60-mal pro Sekunde ein Neuberechnen des Layouts.
+    let colors = readRendererColors(canvas);
+    const rereadColors = () => {
+      colors = readRendererColors(canvas);
+    };
+
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     resize();
+
+    // Beim Themewechsel ändert sich die Klasse am Dokument — dann gelten andere Farben.
+    const themeObserver = new MutationObserver(rereadColors);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
 
     const trail: PitchPoint[] = [];
     let smoothed: number | undefined;
@@ -100,13 +115,14 @@ export const PitchCanvas = ({
 
       while (trail.length > 0 && trail[0].timeMs < positionMs - TRAIL_LENGTH_MS) trail.shift();
 
-      drawTimeline(ctx, { width, height, positionMs, trail, notes, midiLow, midiHigh });
+      drawTimeline(ctx, { width, height, positionMs, trail, notes, midiLow, midiHigh, colors });
       frame = requestAnimationFrame(loop);
     });
 
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      themeObserver.disconnect();
     };
   }, [engine, microphone, notes, midiLow, midiHigh]);
 

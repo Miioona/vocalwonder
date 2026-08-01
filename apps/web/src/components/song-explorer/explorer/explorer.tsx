@@ -81,7 +81,7 @@ export const Explorer = () => {
       {showTree && (
         <div
           className={cn(
-            "min-h-0 overflow-y-auto md:border-r md:border-neutral-800",
+            "min-h-0 overflow-y-auto md:border-r md:border-border",
             mobilePane === "files" && "hidden md:block",
           )}
         >
@@ -95,32 +95,32 @@ export const Explorer = () => {
           showTree && mobilePane === "folders" && "hidden md:flex",
         )}
       >
-        <div className="flex items-center gap-2 border-b border-neutral-800 px-3 py-2">
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
           {showTree && (
             <button
               type="button"
               onClick={() => setMobilePane("folders")}
-              className="shrink-0 text-xs text-neutral-400 hover:text-neutral-100 md:hidden"
+              className="shrink-0 text-xs text-muted-foreground hover:text-foreground md:hidden"
             >
               ← Ordner
             </button>
           )}
 
-          <nav className="flex min-w-0 flex-1 items-center gap-1 text-xs text-neutral-500">
+          <nav className="flex min-w-0 flex-1 items-center gap-1 text-xs text-muted-foreground">
             <button
               type="button"
               onClick={() => goToPath("")}
-              className="shrink-0 truncate hover:text-neutral-200"
+              className="shrink-0 truncate hover:text-foreground"
             >
               {root.name}
             </button>
             {segments.map((segment, index) => (
               <span key={segment} className="flex min-w-0 items-center gap-1">
-                <span className="shrink-0 text-neutral-700">/</span>
+                <span className="shrink-0 text-muted-foreground">/</span>
                 <button
                   type="button"
                   onClick={() => goToPath(segments.slice(0, index + 1).join("/"))}
-                  className="truncate hover:text-neutral-200"
+                  className="truncate hover:text-foreground"
                 >
                   {segment}
                 </button>
@@ -128,7 +128,7 @@ export const Explorer = () => {
             ))}
           </nav>
 
-          <span className="shrink-0 text-xs text-neutral-600" title={skippedDetail(contents)}>
+          <span className="shrink-0 text-xs text-muted-foreground" title={skippedDetail(contents)}>
             {summarize(contents)}
           </span>
         </div>

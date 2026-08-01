@@ -28,16 +28,16 @@ export const FileList = ({
   onEnterFolder,
 }: FileListProps) => {
   if (status === "loading" && files.length === 0 && folders.length === 0) {
-    return <p className="p-4 text-sm text-neutral-600">lädt …</p>;
+    return <p className="p-4 text-sm text-muted-foreground">lädt …</p>;
   }
 
   if (status === "error") {
-    return <p className="p-4 text-sm text-red-400">{error}</p>;
+    return <p className="p-4 text-sm text-destructive">{error}</p>;
   }
 
   if (status === "done" && files.length === 0 && folders.length === 0) {
     return (
-      <div className="p-4 text-sm text-neutral-600">
+      <div className="p-4 text-sm text-muted-foreground">
         <p>Dieser Ordner enthält keine unterstützten Songs.</p>
         {skipped.length > 0 && (
           <p className="mt-2 text-xs">Übersprungen: {skipped.map(formatSkipped).join(", ")}</p>
@@ -53,15 +53,15 @@ export const FileList = ({
           <button
             type="button"
             onClick={() => onEnterFolder(folder)}
-            className="flex w-full items-center gap-3 rounded-md p-2 text-left hover:bg-neutral-900"
+            className="flex w-full items-center gap-3 rounded-md p-2 text-left hover:bg-muted"
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded bg-neutral-900 text-neutral-600">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
               <svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden>
                 <path d="M1.5 3.5A1.5 1.5 0 0 1 3 2h3l1.5 1.5H13A1.5 1.5 0 0 1 14.5 5v7A1.5 1.5 0 0 1 13 13.5H3A1.5 1.5 0 0 1 1.5 12V3.5z" />
               </svg>
             </span>
-            <span className="min-w-0 flex-1 truncate text-sm text-neutral-300">{folder.name}</span>
-            <span className="shrink-0 text-neutral-600">›</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-foreground">{folder.name}</span>
+            <span className="shrink-0 text-muted-foreground">›</span>
           </button>
         </li>
       ))}

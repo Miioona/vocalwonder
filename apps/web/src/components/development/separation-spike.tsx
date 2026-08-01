@@ -116,27 +116,27 @@ export const SeparationSpike = () => {
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold">Spike: Stem-Trennung</h1>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-muted-foreground">
           HT-Demucs als ONNX im Browser. Misst Ladezeit, Rechenzeit und liefert den Gesangs-Stem zum
           Anhören. Läuft auf dem Hauptthread — die Seite ruckelt währenddessen, das ist beim Messen
           so gewollt.
         </p>
       </header>
 
-      <section className="flex flex-col gap-3 rounded-lg border border-neutral-800 p-4">
+      <section className="flex flex-col gap-3 rounded-lg border border-border p-4">
         <input
           type="file"
           accept="audio/*"
           onChange={(event) => setFile(event.target.files?.[0])}
-          className="text-sm text-neutral-400 file:mr-3 file:rounded-md file:border file:border-neutral-700 file:bg-neutral-900 file:px-3 file:py-1.5 file:text-sm file:text-neutral-200"
+          className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-muted file:px-3 file:py-1.5 file:text-sm file:text-foreground"
         />
 
-        <label className="flex items-center justify-between gap-4 text-sm text-neutral-400">
+        <label className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
           Modell
           <select
             value={modelKey}
             onChange={(event) => setModelKey(event.target.value as ModelKey)}
-            className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
+            className="rounded-md border border-input bg-muted px-2 py-1 text-sm"
           >
             {Object.entries(MODELS).map(([key, model]) => (
               <option key={key} value={key}>
@@ -146,18 +146,18 @@ export const SeparationSpike = () => {
           </select>
         </label>
 
-        <label className="flex items-center justify-between gap-4 text-sm text-neutral-400">
+        <label className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
           Nur die ersten Sekunden (0 = ganzer Song)
           <input
             type="number"
             min={0}
             value={limitSeconds}
             onChange={(event) => setLimitSeconds(Number(event.target.value))}
-            className="w-20 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
+            className="w-20 rounded-md border border-input bg-muted px-2 py-1 text-sm"
           />
         </label>
 
-        <label className="flex items-center justify-between gap-4 text-sm text-neutral-400">
+        <label className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
           WebGPU bevorzugen (greift nur beim WebGPU-tauglichen Modell)
           <input
             type="checkbox"
@@ -174,37 +174,37 @@ export const SeparationSpike = () => {
 
         {progress && (
           <div className="flex flex-col gap-1">
-            <div className="h-1 overflow-hidden rounded-full bg-neutral-800">
+            <div className="h-1 overflow-hidden rounded-full bg-accent">
               <div
-                className="h-full rounded-full bg-emerald-400 transition-[width]"
+                className="h-full rounded-full bg-voice transition-[width]"
                 style={{ width: `${Math.round((progress.ratio ?? 0) * 100)}%` }}
               />
             </div>
-            <p className="text-xs text-neutral-500">{progress.message}</p>
+            <p className="text-xs text-muted-foreground">{progress.message}</p>
           </div>
         )}
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </section>
 
       {result && (
-        <section className="flex flex-col gap-3 rounded-lg border border-neutral-800 p-4">
-          <h2 className="text-sm font-medium text-neutral-300">Ergebnis</h2>
+        <section className="flex flex-col gap-3 rounded-lg border border-border p-4">
+          <h2 className="text-sm font-medium text-foreground">Ergebnis</h2>
           <dl className="grid grid-cols-2 gap-y-1 text-sm">
-            <dt className="text-neutral-500">Rechenzeit</dt>
+            <dt className="text-muted-foreground">Rechenzeit</dt>
             <dd className="font-mono">{(result.totalMs / 1000).toFixed(1)} s</dd>
-            <dt className="text-neutral-500">Faktor zur Echtzeit</dt>
+            <dt className="text-muted-foreground">Faktor zur Echtzeit</dt>
             <dd className="font-mono">{result.realtimeFactor.toFixed(2)}×</dd>
-            <dt className="text-neutral-500">Blöcke</dt>
+            <dt className="text-muted-foreground">Blöcke</dt>
             <dd className="font-mono">{result.chunkCount}</dd>
-            <dt className="text-neutral-500">Backend</dt>
+            <dt className="text-muted-foreground">Backend</dt>
             <dd className="font-mono">{result.provider}</dd>
           </dl>
 
           {vocalsUrl && (
             <div className="flex flex-col gap-2">
               <audio controls src={vocalsUrl} className="w-full" />
-              <a href={vocalsUrl} download="vocals.wav" className="text-sm text-emerald-400">
+              <a href={vocalsUrl} download="vocals.wav" className="text-sm text-voice">
                 vocals.wav herunterladen
               </a>
             </div>
@@ -213,10 +213,10 @@ export const SeparationSpike = () => {
       )}
 
       {chart && curve && (
-        <section className="flex flex-col gap-3 rounded-lg border border-neutral-800 p-4">
-          <h2 className="text-sm font-medium text-neutral-300">
+        <section className="flex flex-col gap-3 rounded-lg border border-border p-4">
+          <h2 className="text-sm font-medium text-foreground">
             Balken aus der Analyse
-            <span className="ml-2 font-normal text-neutral-500">
+            <span className="ml-2 font-normal text-muted-foreground">
               {chart.phrases.length} Phrasen ·{" "}
               {chart.phrases.reduce((sum, phrase) => sum + phrase.notes.length, 0)} Noten
             </span>
@@ -241,7 +241,7 @@ export const SeparationSpike = () => {
             </Button>
           </div>
 
-          <p className="text-xs text-neutral-600">
+          <p className="text-xs text-muted-foreground">
             Dünne Linie: rohe Tonhöhenkurve. Grüne Balken: was die Segmentierung daraus gemacht hat.
             Das Bild ist schwer zu beurteilen — die Vertonung nicht: Klingt sie nach dem Song,
             stimmen die Noten. Zusammen mit dem Gesang hört man außerdem, ob sie zeitlich sitzen.
@@ -250,9 +250,9 @@ export const SeparationSpike = () => {
       )}
 
       {log.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-lg border border-neutral-800 p-4">
-          <h2 className="text-sm font-medium text-neutral-300">Protokoll</h2>
-          <ul className="flex flex-col gap-0.5 font-mono text-xs text-neutral-500">
+        <section className="flex flex-col gap-2 rounded-lg border border-border p-4">
+          <h2 className="text-sm font-medium text-foreground">Protokoll</h2>
+          <ul className="flex flex-col gap-0.5 font-mono text-xs text-muted-foreground">
             {log.map((entry, index) => (
               <li key={index}>{entry}</li>
             ))}

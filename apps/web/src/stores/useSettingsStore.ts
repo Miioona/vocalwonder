@@ -8,7 +8,11 @@ import { persist } from "zustand/middleware";
  * an vielen Stellen gelesen — die Renderschleife holt sich den Latenzausgleich zum Beispiel
  * pro Frame direkt über `getState()`, ohne React dazwischen.
  */
+export type ThemeName = "dark" | "light";
+
 export interface Settings {
+  /** Dunkel ist der Standard — der Spielmodus ist es ohnehin immer. */
+  theme: ThemeName;
   /**
    * Ausgleich der Verzögerung in Millisekunden.
    *
@@ -49,6 +53,7 @@ interface SettingsState extends Settings {
 }
 
 const DEFAULTS: Settings = {
+  theme: "dark",
   latencyMs: 0,
   latencyAuto: true,
   micSensitivity: 0.5,

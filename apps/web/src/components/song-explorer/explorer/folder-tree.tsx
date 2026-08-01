@@ -56,14 +56,14 @@ const TreeNode = ({
       <div
         className={cn(
           "flex items-center gap-0.5 rounded-md pr-1",
-          selected ? "bg-neutral-800 text-neutral-100" : "text-neutral-400 hover:bg-neutral-900",
+          selected ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-muted",
         )}
         style={{ paddingLeft: `${depth * 12}px` }}
       >
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className={cn("shrink-0 rounded p-1 hover:text-neutral-100", !hasChildren && "invisible")}
+          className={cn("shrink-0 rounded p-1 hover:text-foreground", !hasChildren && "invisible")}
           aria-label={expanded ? "Zuklappen" : "Aufklappen"}
         >
           <Chevron open={expanded} />
@@ -85,7 +85,7 @@ const TreeNode = ({
         <ul>
           {status === "loading" && contents.folders.length === 0 && (
             <li
-              className="py-1 pl-2 text-xs text-neutral-600"
+              className="py-1 pl-2 text-xs text-muted-foreground"
               style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
             >
               lädt …
@@ -93,7 +93,7 @@ const TreeNode = ({
           )}
           {status === "error" && (
             <li
-              className="py-1 pl-2 text-xs text-red-400"
+              className="py-1 pl-2 text-xs text-destructive"
               style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
             >
               {error ?? "nicht lesbar"}

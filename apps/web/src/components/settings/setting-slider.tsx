@@ -5,14 +5,6 @@ import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-/** Ein Abschnitt im Einstellungsdialog — Überschrift plus Inhalt. */
-export const SettingsSection = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-4 border-t border-border pt-5 first:border-0 first:pt-0">
-    <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</h3>
-    {children}
-  </section>
-);
-
 interface SettingSliderProps {
   label: string;
   /** Rechts neben der Beschriftung, z. B. "40 %" oder "120 ms". */

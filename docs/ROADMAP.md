@@ -82,8 +82,11 @@ Bewertung und viel Feinschliff an den Analyse-Schwellen.
       Pegel und Notenname als Kontrollanzeige im Spielbildschirm.
 - [x] **12. Ist-Linie im Renderer** — geglättet (EMA 0.4), Sprünge über 2,5 Halbtöne werden
       direkt übernommen; Unterbrechung der Linie bei Pausen über 140 ms.
-- [ ] **13. Latenz-Kalibrierung** — `AudioContext.outputLatency` als Startwert plus manueller
-      Offset-Slider. Ohne das fühlt sich alles daneben an, und man findet nie heraus warum.
+- [x] **13. Latenz-Kalibrierung** — `outputLatency` als Startwert (Automatik, die der erste
+      Zug am Regler abschaltet), Regler in den Einstellungen. Wirkt sofort: Die Renderschleife
+      liest den Wert pro Frame aus dem Store und verschiebt damit die gesungene Linie.
+      _Offen:_ Der bequeme Weg — ein Kalibrier-Bildschirm mit Klickspur, der die Differenz
+      selbst misst, statt sie schätzen zu lassen.
 
 ## Phase 4b — Einstellungen
 
@@ -91,26 +94,23 @@ Erreichbar über ein Zahnrad/Benutzer-Symbol **oben rechts im Explorer**, nicht 
 Werte in einem eigenen `useSettingsStore` und dauerhaft gespeichert (localStorage reicht,
 Gerätewahl als `deviceId`).
 
-- [ ] **S1. Eingabegerät wählen** — `navigator.mediaDevices.enumerateDevices()`, Auswahl als
-      `deviceId` in den `getUserMedia`-Constraints.
-      _Stolperstein:_ Gerätenamen sind leer, solange keine Mikrofon-Berechtigung erteilt wurde —
-      die Liste ist also erst nach dem ersten Zulassen brauchbar.
-      _Stolperstein:_ Wird ein Gerät abgezogen, muss auf den Standard zurückgefallen werden
-      (`devicechange`-Event).
-- [ ] **S2. Ausgabegerät wählen** — `AudioContext.setSinkId()` (Chrome/Edge). Fällt der Aufruf
-      durch, bleibt es bei der Systemausgabe — dann den Wähler ausblenden statt Fehler zeigen.
-- [ ] **S3. Eigenen Gesang mithören** — Checkbox plus Lautstärkeregler. Technisch:
-      Mikrofonquelle → `GainNode` → Ausgabe, Gain 0 wenn aus.
-      _Achtung:_ ohne Kopfhörer Rückkopplung, und die Verzögerung wirft Sänger aus dem Takt.
-      Deshalb standardmäßig **aus**, mit Hinweis beim Einschalten.
-- [ ] **S4. Songordner wechseln** — der bestehende Ordner-Picker zieht aus der Kopfzeile in
-      die Einstellungen um.
-- [ ] **S5. Mikrofon-Empfindlichkeit** — beim Testen wurden gelegentlich leise
-      Hintergrundgeräusche als Ton erkannt. Zwei Stellschrauben, beide gehören in die
-      Einstellungen: die Klarheitsschwelle (`MIN_CLARITY`, aktuell 0.85 in
-      `lib/player/microphone.ts`) und eine Mindestlautstärke (`minVolumeDecibels` von
-      `pitchy`, aktuell ungenutzt). Dazu ein Regler "Empfindlichkeit" mit sinnvollem
-      Standardwert, statt zwei technischer Zahlen.
+- [x] **S1. Eingabegerät wählen** — Auswahl als `deviceId` in den Constraints, bewusst ohne
+      `exact`: Ist das gemerkte Gerät weg, nimmt der Browser das Standardgerät, statt den
+      Zugriff zu verweigern. Liste aktualisiert sich über `devicechange`.
+      _Stolperstein, bestätigt:_ Gerätenamen sind leer, bis die Mikrofon-Berechtigung einmal
+      erteilt wurde. Der Dialog sagt das jetzt, statt namenlose Einträge zu zeigen.
+- [x] **S2. Ausgabegerät wählen** — `AudioContext.setSinkId()`; ist es nicht verfügbar, wird
+      der Wähler ausgeblendet statt ein Fehler gezeigt.
+- [x] **S3. Eigenen Gesang mithören** — Schalter plus Lautstärke, standardmäßig aus.
+      Verstärkung bis Faktor 5 und quadratisch geregelt: Der rohe Mikrofonpegel ist leise,
+      weil `autoGainControl` aus sein muss.
+- [x] **S4. Songordner wechseln** — in den Einstellungen unter "Bibliothek". In der Kopfzeile
+      bleiben nur "Ordner auswählen" und "Zugriff erlauben", weil ohne die nichts geht.
+- [x] **S5. Mikrofon-Empfindlichkeit** — ein Regler, dahinter beide Schwellen
+      (Klarheit 0.95→0.7, Mindestlautstärke −25→−55 dB). Wirkt ohne Neustart des Mikrofons.
+
+Dazu, nicht ursprünglich geplant: **Wiedergabelautstärke** (eigener `GainNode` in der Engine)
+und die Aufteilung des Dialogs in Bereiche mit Menü links.
 
 ## Phase 5 — Spiel
 
@@ -302,31 +302,24 @@ dunkel, spielerisch, große Zahlen, wenige kräftige Akzente.
 jeder Datei einzeln. Bei zwölf Komponenten ist die Umstellung eine Stunde, bei vierzig ein
 Nachmittag Fleißarbeit.
 
-- [ ] **T1. Semantische Tokens** — im `@theme`-Block von `globals.css` als CSS-Variablen
-      definieren (Hintergrund, Fläche, Rand, Text, gedämpfter Text, Akzent, Warnung, Fehler),
-      bestehende Farben darauf abbilden.
-- [ ] **T2. Komponenten umstellen** — feste Farbklassen durch die Tokens ersetzen.
-- [ ] **T3. Canvas mitziehen** — der Renderer erbt **kein** CSS. Farben für Raster, Playhead
-      und Linie müssen per `getComputedStyle` aus den Variablen gelesen werden, sonst bleibt
-      das Spielfeld grau, während der Rest das Theme wechselt.
-- [ ] **T4. Theme-Store** — Auswahl setzt die Variablen auf `document.documentElement` und
-      merkt sie sich (localStorage). Ein paar Voreinstellungen plus freie Akzentfarbe.
-- [ ] **T5. shadcn/ui gezielt dazunehmen** — Dialog, Select, Slider, Switch, wenn die
-      Einstellungen (Phase 4b) gebaut werden. Nicht auf Vorrat installieren: Es ist
-      Copy-in-Code mit Radix-Paketen pro Komponente, und die Spielansichten sind Canvas.
-
-## Stellschrauben, die als Nächstes gedreht gehören
-
-Nach dem ersten Spielen mit echten Songs (31.07.2026) — nichts davon ist kaputt, alles ist
-Feinschliff:
-
-- [ ] **Segmentierung pro Genre** — siehe Voreinstellungen weiter oben. Bei Rap sitzen die
-      Noten gut, bei gehaltenem Gesang gerät es leichter zu kleinteilig.
-- [ ] **Ad-libs im Intro** werden als Noten erkannt (Mitte/Seite-Trick als erster Versuch).
-- [ ] **Latenz-Kalibrierung** (Schritt 13) — ohne sie lässt sich "die Balken sitzen daneben"
-      nicht von "die Analyse ist daneben" unterscheiden.
-- [ ] **Notendichte** im Spielfeld prüfen: Sind die Balken lang genug zum Treffen, oder
-      zerfällt eine Zeile in zu viele kurze?
+- [x] **T1. Semantische Tokens** — Palette in `globals.css`, hell und dunkel, jeweils mit
+      leichtem Violett-Ton. Dazu eigene Spiel-Tokens (`--note`, `--note-active`, `--voice`,
+      `--grid`, `--playhead`), die shadcn nicht mitbringt.
+- [x] **T2. Komponenten umgestellt** — keine fest verdrahteten `neutral-*`, `emerald-*` oder
+      `red-*`-Klassen mehr außerhalb der shadcn-Bausteine.
+- [x] **T3. Canvas zieht mit** — `renderer-colors.ts` liest die Variablen per
+      `getComputedStyle`, einmal beim Aufbau und bei Größen- oder Themewechsel, nie pro Frame.
+      Abstufungen laufen über `globalAlpha` statt über eingebackene Alphawerte.
+- [x] **T4a. Hell und Dunkel** — `theme` in den Einstellungen, Klasse am Dokument, dazu ein
+      Skript im Dokumentkopf gegen das Aufblitzen der falschen Fassung beim Laden.
+      Der Spielmodus bleibt bewusst in beiden Fassungen dunkel.
+- [ ] **T4b. Eigene Farben** — Auswahl der Akzentfarbe durch den User. Technisch nur noch das
+      Überschreiben derselben Variablen auf `document.documentElement`; es fehlt die Oberfläche
+      dafür. Auch die Spielfarben sollen anpassbar sein.
+- [x] **T5. shadcn/ui** — Base UI als Unterbau, Voreinstellung "nova". Dialog, Slider, Switch,
+      Select, Label, Button.
+      **Falle:** shadcn legt seine Farben in der hellen Fassung an und schaltet über die Klasse
+      `dark` um. Ohne die Klasse am `<html>` sind alle Bausteine weiß.
 
 ## Offene Kleinigkeiten
 

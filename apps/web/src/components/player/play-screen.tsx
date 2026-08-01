@@ -96,7 +96,7 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 overflow-hidden bg-neutral-950 ${
+      className={`fixed inset-0 z-50 overflow-hidden bg-background ${
         leaving ? "animate-screen-out" : "animate-screen-in"
       }`}
       onAnimationEnd={onAnimationEnd}
@@ -110,9 +110,9 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
           className="absolute inset-0 size-full scale-110 object-cover blur-md brightness-70 saturate-150"
         />
       ) : (
-        <div className="absolute inset-0 bg-linear-to-br from-neutral-900 to-neutral-950" />
+        <div className="absolute inset-0 bg-linear-to-br from-muted to-background" />
       )}
-      <div className="absolute inset-0 bg-neutral-950/50" />
+      <div className="absolute inset-0 bg-background/50" />
 
       <div className="relative flex h-full flex-col">
         <header className="flex items-start justify-between gap-4 p-4 md:p-6">
@@ -120,7 +120,7 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
             <p className="truncate text-lg font-medium md:text-2xl">
               {metadata?.title ?? stripExtension(song.name)}
             </p>
-            <p className="truncate text-sm text-neutral-400">
+            <p className="truncate text-sm text-muted-foreground">
               {metadata?.artist ?? "Unbekannter Artist"}
             </p>
           </div>
@@ -134,7 +134,7 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
                 pause();
                 setMenuOpen(true);
               }}
-              className="rounded-md border border-neutral-700/60 bg-neutral-950/40 px-3 py-1.5 text-sm text-neutral-300 hover:bg-neutral-900"
+              className="rounded-md border border-border bg-background/40 px-3 py-1.5 text-sm text-foreground hover:bg-muted"
               aria-label="Menü öffnen"
             >
               ☰
@@ -147,24 +147,24 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
           <PitchCanvas engine={engine} microphone={microphone} chart={chart} />
 
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            {phase === "loading" && <p className="text-neutral-400">Song wird geladen …</p>}
+            {phase === "loading" && <p className="text-muted-foreground">Song wird geladen …</p>}
             {phase === "countdown" && (
               <p key={countdown} className="animate-countdown text-7xl font-semibold md:text-9xl">
                 {countdown}
               </p>
             )}
-            {phase === "error" && <p className="text-red-400">{error}</p>}
+            {phase === "error" && <p className="text-destructive">{error}</p>}
           </div>
         </div>
 
         <footer className="p-4 md:p-6">
-          <div className="h-1 overflow-hidden rounded-full bg-neutral-800">
+          <div className="h-1 overflow-hidden rounded-full bg-accent">
             <div
-              className="h-full rounded-full bg-neutral-300 transition-[width] duration-200 ease-linear"
+              className="h-full rounded-full bg-foreground/70 transition-[width] duration-200 ease-linear"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="mt-2 flex justify-between font-mono text-xs text-neutral-500">
+          <div className="mt-2 flex justify-between font-mono text-xs text-muted-foreground">
             <span>{formatDuration(positionMs)}</span>
             <span>{formatDuration(durationMs)}</span>
           </div>
