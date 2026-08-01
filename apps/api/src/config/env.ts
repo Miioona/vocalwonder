@@ -10,10 +10,11 @@ const envSchema = z.object({
 
   /** Signiert die Sitzungen. Beliebige lange Zufallszeichenkette. */
   BETTER_AUTH_SECRET: z.string().optional(),
+  // Beide mit Schema, sonst passt der Vergleich mit dem Ursprung des Browsers nicht.
   /** Öffentliche Adresse dieses Servers, für die Rücksprünge der Anbieter. */
-  BETTER_AUTH_URL: z.string().default("http://localhost:8000"),
+  BETTER_AUTH_URL: z.url().default("http://localhost:8000"),
   /** Adresse des Frontends — für CORS und den Rücksprung nach dem Anmelden. */
-  WEB_ORIGIN: z.string().default("http://localhost:3000"),
+  WEB_ORIGIN: z.url().default("http://localhost:3000"),
 
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
