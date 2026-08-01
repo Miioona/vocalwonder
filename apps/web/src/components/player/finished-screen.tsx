@@ -1,11 +1,22 @@
 "use client";
 
+import { PerformanceReview } from "@/components/player/performance-review";
 import { Button } from "@/components/ui/button";
+import type { Chart, NoteScore, ScoreSnapshot } from "@vocalwonder/core";
+
 import { stripExtension } from "@/lib/song-explorer/audio-files";
+import type { PitchPoint } from "@/lib/player/renderer";
 import type { AudioFile } from "@/lib/song-explorer/types";
 import { useSongMetadata } from "@/lib/song-explorer/use-song-metadata";
 
 interface FinishedScreenProps {
+  /** Fehlt im Freestyle — ohne Chart gibt es nichts zu bewerten. */
+  result?: {
+    chart: Chart;
+    snapshot: ScoreSnapshot;
+    recording: readonly PitchPoint[];
+    noteScores: readonly NoteScore[];
+  };
   onRestart: () => void;
   onExit: () => void;
   /** Nächster Titel aus derselben Liste. Fehlt, wenn es nur einen Song gibt. */
@@ -14,11 +25,37 @@ interface FinishedScreenProps {
 }
 
 /** Was nach dem letzten Ton passiert — nie eine Sackgasse. */
-export const FinishedScreen = ({ onRestart, onExit, next, onPlayNext }: FinishedScreenProps) => {
+export const FinishedScreen = ({
+  result,
+  onRestart,
+  onExit,
+  next,
+  onPlayNext,
+}: FinishedScreenProps) => {
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-popover/95 p-5">
-        <p className="text-center text-xl font-medium">Song zu Ende</p>
+      <div className="flex w-full max-w-xl flex-col gap-4 rounded-xl border border-border bg-popover/95 p-5">
+        {result ? (
+          <div className="flex flex-col gap-3">
+            <div className="text-center">
+              <p className="font-mono text-4xl font-semibold tabular-nums">
+                {result.snapshot.points.toLocaleString("de-DE")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {Math.round(result.snapshot.ratio * 100)} % getroffen · {result.snapshot.hitNotes}{" "}
+                von {result.snapshot.totalNotes} Noten
+              </p>
+            </div>
+
+            <PerformanceReview
+              chart={result.chart}
+              recording={result.recording}
+              noteScores={result.noteScores}
+            />
+          </div>
+        ) : (
+          <p className="text-center text-xl font-medium">Song zu Ende</p>
+        )}
 
         <div className="flex flex-col gap-2">
           <Button variant="outline" onClick={onRestart} className="w-full">

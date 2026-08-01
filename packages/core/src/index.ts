@@ -27,5 +27,8 @@ export {
   pitchClassDistance,
 } from "./pitch";
 
+export type { NoteScore, ScoreSettings, ScoreSnapshot, Scorer } from "./scoring";
+export { DEFAULT_SCORE_SETTINGS, MAX_POINTS, createScorer } from "./scoring";
+
 export type { ParseUltraStarOptions } from "./ultrastar";
 export { UltraStarParseError, parseUltraStar } from "./ultrastar";

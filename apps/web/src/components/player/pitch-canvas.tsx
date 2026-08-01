@@ -1,28 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 
 import { allNotes, midiRange, type Chart, type Note } from "@vocalwonder/core";
 
 import type { AudioEngine } from "@/lib/player/audio-engine";
-import type { Microphone } from "@/lib/player/microphone";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import {
-  DEFAULT_MIDI_HIGH,
-  DEFAULT_MIDI_LOW,
-  drawTimeline,
-  type PitchPoint,
-} from "@/lib/player/renderer";
-import { readRendererColors } from "@/lib/player/renderer-colors";
 
-/** So weit reicht die gesungene Linie zurück — mehr ist links vom Bild sowieso weg. */
-const TRAIL_LENGTH_MS = 8000;
-/**
- * Glättung der Tonhöhe. Kleine Schwankungen (Vibrato, Erkennungsrauschen) werden gedämpft,
- * echte Sprünge übernimmt der Wert direkt — sonst würde die Linie hinterherschleichen.
- */
-const SMOOTHING = 0.4;
-const JUMP_SEMITONES = 2.5;
+import { DEFAULT_MIDI_HIGH, DEFAULT_MIDI_LOW, drawTimeline } from "@/lib/player/renderer";
+import type { Performance } from "@/lib/player/use-performance";
+import { readRendererColors } from "@/lib/player/renderer-colors";
 
 /**
  * Das Spielfeld. Die Schleife holt sich Zeit und Tonhöhe **direkt** aus Engine und
@@ -31,11 +17,12 @@ const JUMP_SEMITONES = 2.5;
  */
 export const PitchCanvas = ({
   engine,
-  microphone,
+  performance,
   chart,
 }: {
   engine: AudioEngine;
-  microphone?: Microphone;
+  /** Gesungene Linie und Bewertung; wird pro Frame gelesen, nie über React. */
+  performance: RefObject<Performance>;
   chart?: Chart;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,40 +69,22 @@ export const PitchCanvas = ({
       attributeFilter: ["class", "style"],
     });
 
-    const trail: PitchPoint[] = [];
-    let smoothed: number | undefined;
-    let lastPositionMs = 0;
-
     let frame = requestAnimationFrame(function loop() {
       const positionMs = engine.positionMs();
+      const trail = performance.current.trail;
+      const hits = performance.current.scorer?.ratios();
 
-      // Sprung zurück (Neustart, Spulen): alte Linie verwerfen.
-      if (positionMs < lastPositionMs) {
-        trail.length = 0;
-        smoothed = undefined;
-      }
-      lastPositionMs = positionMs;
-
-      const sample = microphone?.read();
-
-      if (sample?.midi === undefined) {
-        smoothed = undefined;
-      } else if (engine.isPlaying) {
-        smoothed =
-          smoothed === undefined || Math.abs(sample.midi - smoothed) > JUMP_SEMITONES
-            ? sample.midi
-            : smoothed + (sample.midi - smoothed) * SMOOTHING;
-
-        // Der Latenzausgleich verschiebt die eigene Stimme dorthin, wo sie gesungen wurde:
-        // Was jetzt ankommt, war um `latencyMs` früher gemeint. Direkt aus dem Store gelesen,
-        // damit ein Zug am Regler sofort sichtbar wird — pro Frame ein Feldzugriff.
-        const latencyMs = useSettingsStore.getState().latencyMs;
-        trail.push({ timeMs: positionMs - latencyMs, midi: smoothed });
-      }
-
-      while (trail.length > 0 && trail[0].timeMs < positionMs - TRAIL_LENGTH_MS) trail.shift();
-
-      drawTimeline(ctx, { width, height, positionMs, trail, notes, midiLow, midiHigh, colors });
+      drawTimeline(ctx, {
+        width,
+        height,
+        positionMs,
+        trail,
+        notes,
+        hits,
+        midiLow,
+        midiHigh,
+        colors,
+      });
       frame = requestAnimationFrame(loop);
     });
 
@@ -124,7 +93,7 @@ export const PitchCanvas = ({
       observer.disconnect();
       themeObserver.disconnect();
     };
-  }, [engine, microphone, notes, midiLow, midiHigh]);
+  }, [engine, performance, notes, midiLow, midiHigh]);
 
   return <canvas ref={canvasRef} className="size-full" />;
 };

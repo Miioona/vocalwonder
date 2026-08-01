@@ -7,12 +7,13 @@ Stand des Gerüsts: Monorepo, Express-Backend mit `/health`, Next.js-Frontend,
 `packages/core` mit Notenmodell, UltraStar-Parser und Pitch-Helfern. Zustand liegt in
 Zustand-Stores (`stores/`), Logik in `lib/song-explorer`, `lib/player` und `lib/analysis`.
 
-**Stand 01.08.2026:** Ein Song lässt sich auswählen, analysieren (Trennung → Tonhöhe →
-Noten) und spielen — mit Balken im Canvas und der eigenen Stimme als Linie darüber.
-Dazu Einstellungen (Geräte, Lautstärke, Empfindlichkeit, Mithören, Latenzausgleich) und
-ein durchgängiges Farbsystem mit hellem und dunklem Modus.
+**Stand 01.08.2026:** Das Spiel ist spielbar. Ein Song lässt sich auswählen, analysieren
+(Trennung → Tonhöhe → Noten) und singen — mit Balken im Canvas, der eigenen Stimme darüber,
+laufender Bewertung und einem Ergebnisbildschirm mit Nachschau. Dazu Einstellungen (Geräte,
+Lautstärke, Empfindlichkeit, Mithören, Latenzausgleich) und ein durchgängiges Farbsystem mit
+hellem und dunklem Modus.
 
-Was fehlt: die Bewertung, Text auf den Balken und Feinschliff an den Analyse-Schwellen.
+Als Nächstes: Konten mit Anmeldung über Google und Discord, danach Lyrics und der Editor.
 
 ---
 
@@ -52,10 +53,10 @@ Was fehlt: die Bewertung, Text auf den Balken und Feinschliff an den Analyse-Sch
 
 ## Phase 3 — Abspielen und Balken zeichnen
 
-> **Reihenfolge geändert:** Weil noch kein Chart existiert, bauen wir Canvas und Mikrofon
-> vor den Balken. Ergebnis ist ein "Freestyle"-Modus — Musik läuft, die eigene Tonhöhe
-> ist sichtbar, nur die Sollnoten fehlen. Damit sind Uhr, Renderer und Mikrofon fertig
-> getestet, bevor der erste Chart dazukommt.
+> **Reihenfolge geändert:** Weil damals noch kein Chart existierte, kamen Canvas und Mikrofon
+> vor den Balken. Der "Freestyle"-Modus daraus ist geblieben: Ohne Chart läuft die Musik,
+> die eigene Tonhöhe ist sichtbar, nur Sollnoten und Bewertung fehlen. Die Charts kommen
+> inzwischen aus der eigenen Analyse (Phase 6), nicht aus Phase 2.
 
 - [x] **7. Audio-Engine** — `AudioEngine` (`lib/player/audio-engine.ts`) mit decode,
       Play/Pause/Resume; Position ausschließlich aus `AudioContext.currentTime`.
@@ -118,9 +119,22 @@ und die Aufteilung des Dialogs in Bereiche mit Menü links.
 
 ## Phase 5 — Spiel
 
-- [ ] **14. Scoring** — pro Note, oktav-agnostisch (nur die Tonklasse zählt, wie SingStar).
-- [ ] **15. Anzeige** — Punktestand live, Golden- und Freestyle-Noten.
-- [ ] **16. Ergebnisscreen.**
+- [x] **14. Scoring** — `packages/core/src/scoring.ts`, frei von Mikrofon, Canvas und React.
+      Oktav-agnostisch über `pitchClassDistance`; Treffer bis 1,5 Halbtöne, sauber bis 0,8
+      (dazwischen 60 % Wertung). Gutgeschrieben werden Millisekunden, dadurch wiegen lange
+      Noten von selbst mehr. Goldene Noten zählen doppelt, Freestyle gar nicht — beide
+      bleiben aber in der Nummerierung, damit Renderer und Bewertung dieselben Indizes haben.
+      **Gemessen wird im festen 20-ms-Takt** (`lib/player/use-performance.ts`), nicht pro
+      Bildframe: Sonst hinge das Ergebnis an der Bildrate des Geräts.
+- [x] **15. Anzeige** — Punktestand und Trefferzahl im Spielbildschirm, fünfmal pro Sekunde
+      aktualisiert. Getroffene Anteile füllen die Balken während des Singens.
+      Die Balkenhöhe folgt dem sauberen Trefferbereich, dahinter ein blasses Band für den
+      vollen — vorher war der Balken ein Sechstel so hoch wie der zählende Bereich.
+- [x] **16. Ergebnisscreen** — Punktzahl, Trefferquote und **Nachschau**: der ganze Song als
+      Bild, Sollnoten und die eigene Linie übereinander, getroffene Noten hervorgehoben.
+      Die Aufzeichnung läuft im selben 20-ms-Takt mit (~100 KB für vier Minuten) und wird
+      beim Neustart verworfen.
+      _Offen:_ Wertung in Stufen ("Star", "Superstar"), Kombos, goldene Noten in der Analyse.
 
 > **Nach Schritt 16 ist das Spiel spielbar** — mit fremden Charts.
 > Erst danach kommt der riskante Teil.
@@ -325,6 +339,82 @@ Nachmittag Fleißarbeit.
       **Falle:** shadcn legt seine Farben in der hellen Fassung an und schaltet über die Klasse
       `dark` um. Ohne die Klasse am `<html>` sind alle Bausteine weiß.
 
+## Konten und Server
+
+Entschieden am 01.08.2026. Die App bleibt **ohne Konto voll nutzbar** — Musik und Analyse
+liegen beim User. Ein Konto bringt Abgleich zwischen Geräten, Bestenlisten und später Duelle.
+
+- Anmeldung über **better-auth**, selbst gehostet, mit **Google und Discord**.
+  E-Mail/Passwort bleibt vorerst weg — spart Domain, Versand und Passwort-Zurücksetzen.
+- **Eigenes Backend statt Next-Routen**, weil später Mobile- und Desktop-Fassungen sowie
+  Duelle dazukommen sollen. Express bleibt; für Duelle kommt später socket.io oder Colyseus
+  daneben. **Hosting-Grenze:** Vercel kann keine dauerhaften Verbindungen halten, das Backend
+  braucht einen laufenden Prozess (Railway, Fly.io, Render, eigener Server).
+- **MongoDB**, weil vorhandene Erfahrung schwerer wiegt als die Vorteile von Postgres bei
+  diesem Datenzuschnitt.
+- **Punkte werden von Anfang an gespeichert** — jedes gespielte Ergebnis, nicht nur Bestwerte.
+
+- [ ] **A1. Datenbank und Schema** — `users`, `sessions`, `settings`, `songs` (Schlüssel ist
+      der Datei-Hash), `charts`, `scores`
+- [ ] **A2. better-auth im Backend** mit Google und Discord
+- [ ] **A3. Frontend** — Anmelden, Sitzung lesen, Profil in den Einstellungen
+- [ ] **A4. Ergebnisse speichern** — jedes Spiel mit Punktzahl, Trefferquote und Datum
+- [ ] **A5. Abgleich der übrigen Daten** — **zurückgestellt, erst besprechen.** Die Frage ist
+      nicht "wie synchronisieren", sondern **welche Seite pro Wert gewinnt**: Gerätebezogenes
+      wie Latenzausgleich, Mikrofon und Lautstärke gehört zum Browser, nicht zum Konto;
+      Favoriten und Charts gehören zum Konto. Eine pauschale Regel wäre in beide Richtungen
+      falsch.
+
+### Idee: Charts nicht stillschweigend verwerfen
+
+Heute wirft eine Erhöhung von `ANALYSIS_VERSION` gespeicherte Analysen beim Laden weg. Besser
+wäre ein Hinweis statt eines Verschwindens:
+
+- **Aktuelle Fassung:** Pille grün, wie heute ("Chart vorhanden · 35 Phrasen")
+- **Ältere Analysefassung:** Pille und Text **gelb**, mit dem Hinweis, dass der Chart mit einer
+  älteren Analyse entstanden ist — spielbar bleibt er, neu analysieren wird nur angeboten
+- **Von Hand bearbeitet:** immer **grün**, mit dem Vermerk "selbst bearbeitet", unabhängig von
+  der Fassung. Handarbeit wird nie als veraltet dargestellt und nie automatisch ersetzt
+  (siehe Editor-Modus).
+
+## Editor-Modus
+
+Ein Bildschirm, in dem der User den Chart eines Songs von Hand nachbessert. Wird auf Dauer
+gebraucht: Keine Automatik trifft jede Note, und ohne Korrekturmöglichkeit bleibt jeder Song
+so gut oder schlecht, wie die Analyse ihn erwischt hat. Löst nebenbei die Ad-lib-Frage und
+alles, wofür sich sonst eine eigene Heuristik lohnen müsste.
+
+Was er können muss:
+
+- Noten **verschieben, in der Tonhöhe ändern, verlängern, löschen** — dazu teilen und
+  zusammenführen
+- **Hineinzoomen** in die Zeitachse; die Spielansicht taugt zum Bearbeiten nicht
+- **Anhören ab Zeigerposition**, gern mit hörbarer Note beim Ziehen
+- **Rückgängig/Wiederherstellen**
+- später: **Silben zuordnen**, sobald es Lyrics gibt
+
+Zwei Dinge, die man vorher entscheiden muss, sonst tut es später weh:
+
+- **Handarbeit darf nie stillschweigend verloren gehen.** Ein bearbeiteter Chart muss eine
+  Erhöhung von `ANALYSIS_VERSION` überleben und darf beim erneuten Analysieren nicht
+  überschrieben werden. Also getrennt ablegen (`source: "manual"` hat Vorrang) und beim
+  Knopf "Neu analysieren" ausdrücklich nachfragen.
+- **Die Bearbeitung braucht ein eigenes Zeitmaß.** Der Renderer des Spiels zeichnet relativ
+  zum Playhead; der Editor braucht einen festen Ausschnitt mit Zoom und Bildlauf.
+
+## Analyse: was noch fehlt
+
+Die Schwellen sind eingestellt (Stand 01.08.2026), diese drei Punkte lassen sich damit aber
+nicht lösen:
+
+- [ ] **Oktav-Nachkorrektur.** Die Erkennung springt gelegentlich eine Oktave. Keine Schwelle
+      hilft dagegen — nötig ist ein Nachlauf, der Noten weit weg vom lokalen Median um zwölf
+      Halbtöne zurückholt. Der Fehler, der beim Zuhören am meisten stört.
+- [ ] **Gleitende Stille-Schwelle.** Sie hängt heute am lautesten Punkt des **ganzen** Songs.
+      Bei lautem Refrain und leiser Strophe verschwindet die Strophe, egal welcher Wert
+      eingestellt ist. Richtig wäre ein gleitender Bezug über ein paar Sekunden.
+- [ ] **Ad-libs**, siehe eigener Abschnitt weiter oben.
+
 ## Offene Kleinigkeiten
 
 Nichts davon blockiert, aber es sollte nicht verloren gehen:
@@ -345,12 +435,27 @@ Nichts davon blockiert, aber es sollte nicht verloren gehen:
       Datei lesen, aus dem Filter würde ein Ladebalken. "Favoriten" braucht einen Ort zum
       Speichern, der den Rechnerwechsel überlebt.
 
-## Offene Entscheidung
+## Ganz später: Notenbildung auf den Server
 
-Schritt 17 steht bewusst am Ende, obwohl er das größte Risiko trägt: Bis dahin gibt es
-bereits ein spielbares Spiel, und der Ausgang des Spikes ändert nichts an Phase 1–5.
-Das Gegenargument ist genauso gültig — scheitert die Browser-Separation, will man das
-vielleicht früh wissen. Der Spike ist vom Rest unabhängig und kann jederzeit vorgezogen werden.
+Nicht wichtig, aber notiert. Die Analyse ist das Kernstück und soll irgendwann nicht mehr
+offen im Browser liegen.
 
-Falls vorgezogen wird, zuerst das kleine Melodia-Experiment (siehe Idee in Phase 6) statt des
-großen Spikes: geringerer Aufwand, und im Erfolgsfall erübrigt sich der große Spike.
+**Nicht die ganze Analyse verlagern.** Das hieße, die Audiodatei hochzuladen — heute verlässt
+nichts den Rechner des Users. Dazu käme Rechenzeit auf deiner Seite (etwa Songlänge pro Song
+auf einer GPU), Warteschlangen und eine deutlich unangenehmere rechtliche Lage.
+
+**Stattdessen der Schnitt hinter der Tonhöhenkurve:**
+
+```
+Browser:  Trennung + Tonhöhenkurve     kostenlos, keine Datei verlässt den Rechner
+      ↓   nur die Kurve, ~100 KB
+Server:   Notenbildung → Chart          das eigentlich Eigene
+```
+
+Trennmodell und Tonhöhenerkennung sind ohnehin fremde, offen lizenzierte Bausteine. Eigen ist
+die Notenbildung — Schwellen, Hysterese, Verschmelzen, Versatz. Genau die wandert.
+
+**Nebengewinn, unabhängig vom Schutzgedanken:** Liegen Charts zentral, muss ein Song **einmal
+weltweit** analysiert werden — der Datei-Hash erkennt dieselbe Datei bei jedem anderen Nutzer.
+Zu klären wäre dabei, ab wann das Weitergeben von Charts an fremde Nutzer die rechtliche
+Grauzone berührt (siehe Schritt 20).
