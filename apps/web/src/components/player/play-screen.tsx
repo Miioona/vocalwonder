@@ -8,6 +8,7 @@ import { PauseMenu } from "@/components/player/pause-menu";
 import { PitchCanvas } from "@/components/player/pitch-canvas";
 import { useChart } from "@/lib/player/use-chart";
 import { useMicrophone } from "@/lib/player/use-microphone";
+import { usePerformance } from "@/lib/player/use-performance";
 import { nextSong } from "@/lib/song-explorer/playlist";
 import { useExplorerStore } from "@/stores/useExplorerStore";
 import { usePlayback } from "@/lib/player/use-playback";
@@ -37,6 +38,9 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
     engine,
     phase !== "loading" && phase !== "error",
   );
+
+  // Aufnahme und Bewertung laufen nur, während wirklich gesungen wird.
+  const { performance, snapshot } = usePerformance(engine, microphone, chart, phase === "playing");
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -125,7 +129,18 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-4">
+            {snapshot && (
+              <div className="text-right">
+                <p className="font-mono text-xl leading-none font-semibold tabular-nums md:text-3xl">
+                  {snapshot.points.toLocaleString("de-DE")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {snapshot.hitNotes}/{snapshot.totalNotes} Noten
+                </p>
+              </div>
+            )}
+
             <MicMeter microphone={microphone} status={micStatus} />
 
             <button
@@ -144,7 +159,7 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
 
         <div className="relative min-h-0 flex-1">
           {/* Zeitraster, gesungene Linie und Playhead — die Sollbalken kommen obendrauf. */}
-          <PitchCanvas engine={engine} microphone={microphone} chart={chart} />
+          <PitchCanvas engine={engine} performance={performance} chart={chart} />
 
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {phase === "loading" && <p className="text-muted-foreground">Song wird geladen …</p>}
@@ -173,6 +188,16 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
 
       {phase === "finished" && !menuOpen && (
         <FinishedScreen
+          result={
+            chart && snapshot && performance.current.scorer
+              ? {
+                  chart,
+                  snapshot,
+                  recording: performance.current.recording,
+                  noteScores: performance.current.scorer.noteScores(),
+                }
+              : undefined
+          }
           onRestart={restart}
           onExit={requestExit}
           next={suggestion}

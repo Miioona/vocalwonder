@@ -56,7 +56,7 @@ const DEFAULTS: Settings = {
   theme: "dark",
   latencyMs: 0,
   latencyAuto: true,
-  micSensitivity: 0.5,
+  micSensitivity: 0.3,
   volume: 0.8,
   inputDeviceId: undefined,
   outputDeviceId: undefined,

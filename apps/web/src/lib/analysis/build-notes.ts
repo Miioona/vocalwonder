@@ -53,7 +53,7 @@ export const DEFAULT_SEGMENTATION: Segmentation = {
   medianWindow: 5,
   silenceRatio: 0.02,
   minNoteMs: 70,
-  maxBridgeMs: 120,
+  maxBridgeMs: 80,
   pitchTolerance: 0.9,
   switchMs: 60,
   phraseGapMs: 800,

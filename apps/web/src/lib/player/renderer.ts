@@ -1,4 +1,4 @@
-import { midiToNoteName, type Note } from "@vocalwonder/core";
+import { DEFAULT_SCORE_SETTINGS, midiToNoteName, type Note } from "@vocalwonder/core";
 
 import type { RendererColors } from "./renderer-colors";
 
@@ -18,8 +18,15 @@ const PLAYHEAD_RATIO = 1 / 3;
 export const DEFAULT_MIDI_LOW = 45;
 export const DEFAULT_MIDI_HIGH = 81;
 
-/** Dicke eines Notenbalkens in Pixeln. */
-const NOTE_HEIGHT = 15;
+/**
+ * Die Balkenhöhe folgt dem **sauberen Trefferbereich** statt einem festen Pixelwert.
+ *
+ * Vorher war der Balken 15 Pixel dick, während der zählende Bereich je nach Tonumfang
+ * fünf- bis sechsmal so hoch war — man zielte auf einen Strich, obwohl viel mehr galt.
+ * Die Grenzen halten den Balken auf sehr weiten oder sehr engen Songs im Rahmen.
+ */
+const MIN_NOTE_HEIGHT = 10;
+const MAX_NOTE_HEIGHT = 26;
 
 /** Größere Lücke = Atempause: Dann wird die Linie unterbrochen statt durchgezogen. */
 const TRAIL_GAP_MS = 140;
@@ -38,6 +45,8 @@ export interface TimelineFrame {
   trail?: readonly PitchPoint[];
   /** Sollnoten aus dem Chart, nach Startzeit sortiert. */
   notes?: readonly Note[];
+  /** Getroffener Anteil je Note (0–1), gleiche Reihenfolge wie `notes`. */
+  hits?: Float32Array;
   /** Sichtbarer Tonumfang — beim Chart aus dessen Umfang, sonst der Standard. */
   midiLow: number;
   midiHigh: number;
@@ -178,29 +187,66 @@ function drawNotes(
   pixelsPerMs: number,
   playheadX: number,
 ): void {
-  const { width, positionMs, notes } = frame;
+  const { width, height, positionMs, notes, hits, midiLow, midiHigh } = frame;
   if (!notes || notes.length === 0) return;
+
+  const pixelsPerSemitone = height / (midiHigh - midiLow);
+  const noteHeight = Math.min(
+    MAX_NOTE_HEIGHT,
+    Math.max(MIN_NOTE_HEIGHT, 2 * DEFAULT_SCORE_SETTINGS.perfectSemitones * pixelsPerSemitone),
+  );
+  // Der volle Trefferbereich als blasses Band dahinter — dort zählt es noch, nur weniger.
+  const toleranceHeight = 2 * DEFAULT_SCORE_SETTINGS.toleranceSemitones * pixelsPerSemitone;
 
   // Nur den sichtbaren Ausschnitt zeichnen — ein Chart hat schnell mehrere hundert Noten.
   const fromMs = positionMs - playheadX / pixelsPerMs;
   const toMs = positionMs + (width - playheadX) / pixelsPerMs;
 
-  for (const note of notes) {
+  for (const [index, note] of notes.entries()) {
     const endMs = note.startMs + note.durationMs;
     if (endMs < fromMs) continue;
     if (note.startMs > toMs) break;
 
     const x = playheadX + (note.startMs - positionMs) * pixelsPerMs;
     const noteWidth = Math.max(3, note.durationMs * pixelsPerMs);
-    const y = midiToY(note.midi, frame) - NOTE_HEIGHT / 2;
+    const center = midiToY(note.midi, frame);
 
     const active = positionMs >= note.startMs && positionMs <= endMs;
-    ctx.fillStyle = active ? frame.colors.noteActive : frame.colors.note;
-    ctx.globalAlpha = active ? 1 : 0.35;
 
+    ctx.fillStyle = active ? frame.colors.noteActive : frame.colors.note;
+    ctx.globalAlpha = active ? 0.1 : 0.045;
     ctx.beginPath();
-    ctx.roundRect(x, y, noteWidth, NOTE_HEIGHT, NOTE_HEIGHT / 2);
+    ctx.roundRect(
+      x,
+      center - toleranceHeight / 2,
+      noteWidth,
+      toleranceHeight,
+      Math.min(noteHeight, toleranceHeight) / 2,
+    );
     ctx.fill();
+
+    ctx.globalAlpha = active ? 1 : 0.35;
+    ctx.beginPath();
+    ctx.roundRect(x, center - noteHeight / 2, noteWidth, noteHeight, noteHeight / 2);
+    ctx.fill();
+
+    // Der getroffene Anteil füllt den Balken von links. Es ist eine Summe, keine Zeitspanne:
+    // Wer Anfang und Ende trifft, sieht eine zusammenhängende Füllung. Wo genau es hakte,
+    // zeigt die Nachschau nach dem Song.
+    const hit = hits?.[index] ?? 0;
+    if (hit > 0) {
+      ctx.fillStyle = frame.colors.voice;
+      ctx.globalAlpha = 0.95;
+      ctx.beginPath();
+      ctx.roundRect(
+        x,
+        center - noteHeight / 2,
+        Math.max(2, noteWidth * hit),
+        noteHeight,
+        noteHeight / 2,
+      );
+      ctx.fill();
+    }
   }
 
   ctx.globalAlpha = 1;
