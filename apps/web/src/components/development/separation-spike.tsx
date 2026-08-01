@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
-
-import type { Chart } from "@vocalwonder/core";
+import { useMemo, useState } from "react";
 
 import { ChartPreview } from "@/components/development/chart-preview";
+import {
+  PitchControls,
+  SegmentationControls,
+} from "@/components/development/segmentation-controls";
 import { Button } from "@/components/ui/button";
 import { decodeForModel, encodeWav } from "@/lib/analysis/audio-io";
-import { buildChart } from "@/lib/analysis/build-notes";
-import { trackPitch, type PitchCurve } from "@/lib/analysis/pitch-track";
+import { buildChart, DEFAULT_SEGMENTATION, type Segmentation } from "@/lib/analysis/build-notes";
+import { ANALYSIS_VERSION } from "@/lib/analysis/types";
+import type { AudioFile } from "@/lib/song-explorer/types";
+import { useAnalysisStore } from "@/stores/useAnalysisStore";
+import { usePlayerStore } from "@/stores/usePlayerStore";
+import { DEFAULT_PITCH_OPTIONS, trackPitch, type PitchOptions } from "@/lib/analysis/pitch-track";
 import { sonify, type Sonification } from "@/lib/development/sonify";
 import {
   loadModel,
@@ -34,11 +40,57 @@ export const SeparationSpike = () => {
   const [log, setLog] = useState<string[]>([]);
   const [result, setResult] = useState<SeparationResult>();
   const [vocalsUrl, setVocalsUrl] = useState<string>();
-  const [chart, setChart] = useState<Chart>();
-  const [curve, setCurve] = useState<PitchCurve>();
+  const [segmentation, setSegmentation] = useState<Segmentation>(DEFAULT_SEGMENTATION);
+  const [pitchOptions, setPitchOptions] = useState<PitchOptions>(DEFAULT_PITCH_OPTIONS);
   const [analysedMs, setAnalysedMs] = useState(0);
   const [playback, setPlayback] = useState<Sonification>();
   const [error, setError] = useState<string>();
+
+  // Kurve und Chart hängen an den Reglern: Die Kurve kostet einen Durchlauf über den
+  // Gesangs-Stem (Sekunden), die Noten daraus nur Millisekunden.
+  const curve = useMemo(
+    () => (result ? trackPitch(result.vocals, pitchOptions) : undefined),
+    [result, pitchOptions],
+  );
+
+  const chart = useMemo(
+    () =>
+      curve && file ? buildChart(curve, { title: file.name, artist: "", segmentation }) : undefined,
+    [curve, file, segmentation],
+  );
+
+  const setResultInStore = useAnalysisStore((state) => state.setResult);
+  const startPlaying = usePlayerStore((state) => state.start);
+
+  /**
+   * Sprung in den echten Spielmodus. Der Player erwartet einen Datei-Handle aus der
+   * Bibliothek; hier liegt nur eine hochgeladene Datei. Der Handle wird deshalb
+   * nachgebildet — er braucht nur `getFile`.
+   */
+  const playInGameMode = () => {
+    if (!file || !chart || !curve) return;
+    stopPlayback();
+
+    const song: AudioFile = {
+      name: file.name,
+      path: `werkbank/${file.name}`,
+      handle: { getFile: async () => file } as unknown as FileSystemFileHandle,
+    };
+
+    setResultInStore(song.path, {
+      chart,
+      pitch: curve,
+      meta: {
+        model: "werkbank",
+        version: ANALYSIS_VERSION,
+        createdAt: new Date().toISOString(),
+        durationMs: analysedMs,
+        separationMs: result?.totalMs ?? 0,
+      },
+    });
+
+    startPlaying(song);
+  };
 
   const play = (withVocals: boolean) => {
     if (!chart) return;
@@ -61,8 +113,6 @@ export const SeparationSpike = () => {
     setError(undefined);
     setResult(undefined);
     setVocalsUrl(undefined);
-    setChart(undefined);
-    setCurve(undefined);
     setLog([]);
 
     try {
@@ -92,15 +142,7 @@ export const SeparationSpike = () => {
       setResult(separation);
       setVocalsUrl(URL.createObjectURL(encodeWav(separation.vocals)));
 
-      const analysisStart = performance.now();
-      const pitchCurve = trackPitch(separation.vocals);
-      const built = buildChart(pitchCurve, { title: file.name, artist: "" });
-      note(
-        `Noten gebaut: ${built.phrases.length} Phrasen, ${built.phrases.reduce((sum, phrase) => sum + phrase.notes.length, 0)} Noten in ${Math.round(performance.now() - analysisStart)} ms`,
-      );
-
-      setCurve(pitchCurve);
-      setChart(built);
+      // Die Kurve entsteht abgeleitet aus dem Stem und den Reglern, nicht hier.
       setAnalysedMs(audio.durationSeconds * 1000);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unbekannter Fehler.";
@@ -230,6 +272,7 @@ export const SeparationSpike = () => {
           />
 
           <div className="flex flex-wrap gap-2">
+            <Button onClick={playInGameMode}>Im Spielmodus testen</Button>
             <Button variant="outline" onClick={() => play(false)}>
               Nur Noten anhören
             </Button>
@@ -247,6 +290,13 @@ export const SeparationSpike = () => {
             stimmen die Noten. Zusammen mit dem Gesang hört man außerdem, ob sie zeitlich sitzen.
           </p>
         </section>
+      )}
+
+      {curve && (
+        <>
+          <PitchControls value={pitchOptions} onChange={setPitchOptions} />
+          <SegmentationControls value={segmentation} onChange={setSegmentation} />
+        </>
       )}
 
       {log.length > 0 && (

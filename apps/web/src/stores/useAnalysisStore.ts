@@ -25,6 +25,8 @@ interface AnalysisState {
   analyse: (file: AudioFile) => Promise<void>;
   /** Holt ein früher gespeichertes Ergebnis in die Sitzung, falls vorhanden. */
   load: (file: AudioFile) => Promise<void>;
+  /** Ergebnis von außen setzen — die Werkbank schiebt so ihren Chart in den Spielmodus. */
+  setResult: (path: string, result: AnalysisResult) => void;
   cancel: () => void;
 }
 
@@ -71,6 +73,8 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       console.error("[analyse:load]", err);
     }
   },
+
+  setResult: (path, result) => set((state) => ({ results: { ...state.results, [path]: result } })),
 
   cancel: () => {
     current?.cancel();

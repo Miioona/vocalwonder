@@ -18,15 +18,31 @@ import { SAMPLE_RATE } from "./separation";
  * unverändert an einen Server übertragbar.
  */
 
-/** 2048 Samples ≈ 46 ms — genug für tiefe Stimmen. */
-const WINDOW = 2048;
 /** Abstand zweier Rahmen. Feiner braucht es für Noten nicht. */
 export const FRAME_MS = 10;
 const HOP = (SAMPLE_RATE * FRAME_MS) / 1000;
 
-const MIN_CLARITY = 0.8;
-const MIN_HZ = 65;
-const MAX_HZ = 1200;
+/** Die Stellschrauben der Tonhöhenerkennung. */
+export interface PitchOptions {
+  /**
+   * Ab welcher Eindeutigkeit ein Rahmen als Ton zählt (0–1). Zu hoch heißt: Die Stimme
+   * wird streckenweise gar nicht erkannt, und die Segmentierung sieht dort nichts.
+   */
+  minClarity: number;
+  /** Fensterbreite in Samples. Größer stabilisiert tiefe Stimmen, verschmiert schnelle Silben. */
+  windowSize: number;
+  minHz: number;
+  maxHz: number;
+}
+
+export const DEFAULT_PITCH_OPTIONS: PitchOptions = {
+  minClarity: 0.55,
+  windowSize: 2048,
+  minHz: 65,
+  // A5 (880 Hz) ist schon eine hohe Belt-Note. Was darüber auftaucht, sind fast immer
+  // Oktavverdopplungen — die Erkennung greift dann die erste Oberschwingung.
+  maxHz: 900,
+};
 
 export interface PitchCurve {
   /** Abstand zweier Rahmen in Millisekunden. */
@@ -39,30 +55,32 @@ export interface PitchCurve {
   rms: Float32Array;
 }
 
-export function trackPitch(stem: Float32Array[]): PitchCurve {
-  const mono = toMono(stem);
-  const detector = PitchDetector.forFloat32Array(WINDOW);
-  detector.clarityThreshold = MIN_CLARITY;
+export function trackPitch(stem: Float32Array[], options: Partial<PitchOptions> = {}): PitchCurve {
+  const { minClarity, windowSize, minHz, maxHz } = { ...DEFAULT_PITCH_OPTIONS, ...options };
 
-  const count = Math.max(0, Math.floor((mono.length - WINDOW) / HOP) + 1);
+  const mono = toMono(stem);
+  const detector = PitchDetector.forFloat32Array(windowSize);
+  detector.clarityThreshold = minClarity;
+
+  const count = Math.max(0, Math.floor((mono.length - windowSize) / HOP) + 1);
   const midi = new Float32Array(count);
   const clarity = new Float32Array(count);
   const rms = new Float32Array(count);
-  const window = new Float32Array(WINDOW);
+  const window = new Float32Array(windowSize);
 
   for (let index = 0; index < count; index += 1) {
     const start = index * HOP;
-    window.set(mono.subarray(start, start + WINDOW));
+    window.set(mono.subarray(start, start + windowSize));
 
     let sumOfSquares = 0;
     for (const value of window) sumOfSquares += value * value;
 
     const [hz, frameClarity] = detector.findPitch(window, SAMPLE_RATE);
-    const usable = frameClarity >= MIN_CLARITY && hz >= MIN_HZ && hz <= MAX_HZ;
+    const usable = frameClarity >= minClarity && hz >= minHz && hz <= maxHz;
 
     midi[index] = usable ? hzToMidi(hz) : Number.NaN;
     clarity[index] = frameClarity;
-    rms[index] = Math.sqrt(sumOfSquares / WINDOW);
+    rms[index] = Math.sqrt(sumOfSquares / windowSize);
   }
 
   return { frameMs: FRAME_MS, midi, clarity, rms };
