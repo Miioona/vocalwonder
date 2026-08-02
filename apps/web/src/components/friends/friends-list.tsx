@@ -12,12 +12,12 @@ import { useMyProfile } from "@/lib/profile/use-profile";
 import { useDebounced } from "@/lib/use-debounced";
 
 /**
- * Freunde suchen, Anfragen beantworten, Liste sehen.
+ * Freunde suchen, Anfragen beantworten, Liste sehen. Sitzt in der Leiste rechts.
  *
  * Gesucht wird über den Spielernamen oder die genaue E-Mail. Wer selbst noch keinen Namen hat,
  * ist für andere unsichtbar — deshalb steht hier zuerst der Hinweis darauf.
  */
-export const FriendsSettings = () => {
+export const FriendsList = () => {
   const { data: session } = useSession();
   const { data: profile } = useMyProfile();
   const { data: list, isPending } = useFriends();

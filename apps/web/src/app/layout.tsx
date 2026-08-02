@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { AppShell } from "@/components/layout/app-shell";
+import { LibraryBoot } from "@/components/layout/library-boot";
 import { Providers } from "@/components/providers";
 import { ThemeScript } from "@/components/theme-script";
 import { cn } from "@/lib/utils";
@@ -28,7 +30,12 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       </head>
       {/* Kein Seiten-Scroll: Die App füllt das Fenster, gescrollt wird nur in den Panes. */}
       <body className="h-dvh overflow-hidden bg-background text-foreground antialiased">
-        <Providers>{children}</Providers>
+        <Providers>
+          <LibraryBoot />
+
+          {/* Kopfzeile über allen Seiten. Der Spielbildschirm liegt als Vollbild darüber. */}
+          <AppShell>{children}</AppShell>
+        </Providers>
       </body>
     </html>
   );
