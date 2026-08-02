@@ -2,4 +2,7 @@
 export const QUERY_KEYS = {
   HEALTH: "health",
   MY_SCORES: "my-scores",
+  MY_PROFILE: "my-profile",
+  FRIENDS: "friends",
+  PLAYER_SEARCH: "player-search",
 } as const;

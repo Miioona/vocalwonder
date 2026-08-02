@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { PlayerName } from "@/components/settings/sections/player-name";
 import { ScoreHistory } from "@/components/settings/sections/score-history";
 import { Button } from "@/components/ui/button";
 import { signIn, signOut, useSession } from "@/lib/auth/auth-client";
@@ -48,6 +49,10 @@ export const AccountSettings = () => {
             <p className="truncate text-sm font-medium">{session.user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{session.user.email}</p>
           </div>
+        </div>
+
+        <div className="border-t border-border pt-4">
+          <PlayerName />
         </div>
 
         <div>
