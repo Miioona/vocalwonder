@@ -338,11 +338,8 @@ Nachmittag Fleißarbeit.
       Select, Label, Button.
       **Falle:** shadcn legt seine Farben in der hellen Fassung an und schaltet über die Klasse
       `dark` um. Ohne die Klasse am `<html>` sind alle Bausteine weiß.
-- [ ] **T6. Verlauf im Hintergrund** — der Grundhintergrund ist heute eine glatte Fläche
-      (`--background`, hell und dunkel bereits vorhanden). Ein sanfter Schein von oben oder ein
-      Hauch Textur würde dem Explorer mehr Tiefe geben, ohne von den Songs abzulenken. Muss in
-      beiden Fassungen funktionieren und über dieselben Tokens laufen, damit T4b später
-      mitzieht.
+- [x] **T6. Verlauf im Hintergrund** — als `.game-backdrop` auf der Startseite, nicht global.
+      Siehe "Startseite und Navigation".
 
 ## Startseite und Navigation — nach einem Spiel aussehen
 
@@ -355,7 +352,8 @@ sichtbar statt versteckt.
 
 - `/` — Startseite, Hauptmenü
 - `/songs` — der Explorer, inhaltlich unverändert
-- später `/freunde`, `/bestenlisten`
+- später `/multiplayer`, `/bestenliste` — beide stehen gesperrt in der Kopfzeile
+- **Freunde bekommen keinen Pfad**, sondern ein Feld von rechts (siehe U3)
 - Der **Spielbildschirm bleibt eine Überlagerung**, kein eigener Pfad. Begründung: Nach einem
   echten Neuladen wären Ordnerfreigabe, Mikrofon und Audiokontext neu zu erfragen, und alle
   drei brauchen eine Nutzergeste. Als Überlagerung kann der Fall nicht eintreten.
@@ -366,30 +364,58 @@ IndexedDB zurück, die Berechtigung dafür braucht aber meist einen Klick.
 
 **Aufbau der Startseite**
 
-- Kopfzeile: Logo, Bereiche (Singen, Duell, Freunde, Bestenliste), rechts das **Nutzermenü**
-  mit Avatar, Name und Punkten — darin Einstellungen, Freunde, Abmelden
+- Kopfzeile: Logo links, Bereiche mittig (Singleplayer, Multiplayer, Bestenliste), rechts
+  **Nutzermenü** und **Freunde-Symbol** — in dieser Reihenfolge, Freunde ganz außen
 - Mitte: Cover des zuletzt gesungenen Songs, darunter der große **Singen**-Knopf
 - Links: Bibliothek (Anzahl Songs, wie viele analysiert, Ordner wechseln)
 - Rechts: die letzten Ergebnisse
-- **Ohne Anmeldung** sind Duell, Freunde und Bestenliste grau mit Schloss, statt zu fehlen.
+- **Ohne Anmeldung** sind Multiplayer und Bestenliste grau mit Schloss, statt zu fehlen.
   Angefasst: "Dafür brauchst du ein Konto", mehr nicht
 - Abweichung vom Vorbild: Eine tägliche Herausforderung geht nicht — GeoGuessr hat für alle
   dieselbe Welt, unsere Songs liegen lokal und sind bei jedem andere
 
-- [ ] **U1. Gerüst** — `/songs` anlegen, `/` wird Startseite, gemeinsame Kopfzeile ins Layout,
-      `restore()` eine Ebene höher (heute im Explorer, die Startseite braucht die Bibliothek
-      aber auch).
-- [ ] **U2. Karten füllen** — Bibliothek, zuletzt gesungen, Verlauf.
-- [ ] **U3. Freunde einbauen** — erst hier entscheidet sich, ob sie eine eigene Seite brauchen
-      oder als Karte reichen.
-- [ ] **U4. Online-Status ohne Sockets** — Lebenszeichen alle 60 Sekunden, solange der Tab
-      sichtbar ist, dazu `lastSeenAt` im Profil. Online heißt: vor weniger als zwei Minuten
-      gesehen. Echte Verbindungen erst fürs Duell.
-- [ ] **U5. Zahlen zeigen** — Gesamtpunkte, gesungene Songs, Bestwert je Song in der Songliste.
-      Der Teil, der aus einer Dateiliste ein Spiel macht.
+- [x] **U1. Gerüst** — `/songs` angelegt, `/` ist Startseite, gemeinsame Kopfzeile im Layout,
+      `restore()` eine Ebene höher (`LibraryBoot`). Einstellungen sind aus der Kopfzeile ins
+      Nutzermenü gewandert und werden von dort gesteuert geöffnet.
+      **Falle:** Ein Element mit `hidden` fällt ganz aus dem Raster — die rechte Gruppe rückt
+      dann in die mittlere Spalte nach. Deshalb `col-start-1/2/3` fest zugewiesen.
+- [ ] **U2. Karten füllen** — Bibliothek (Gesamtzahl über alle Ordner, nicht nur der offene),
+      zuletzt gesungener Song **lokal gemerkt** (heute steht dort der ausgewählte), Verlauf.
+- [x] **U3. Freunde als Feld von rechts** — kein eigener Pfad. Symbol in der Kopfzeile mit
+      Zahl darauf (heute offene Anfragen, später auch Herausforderungen und Nachrichten),
+      Klick öffnet das Feld über volle Fensterhöhe. Klick daneben schließt. Der Bereich
+      "Freunde" ist damit aus den Einstellungen verschwunden.
+      Erst als Leiste mit Hover gebaut und wieder verworfen: Auf Touchgeräten gibt es kein
+      Hover, und ein dauerhafter Streifen kostet auf schmalen Schirmen zu viel.
+- [x] **U3b. Menü für schmale Schirme** — unter 1024 px (`lg`) Burger links, Logo und Bereiche
+      wandern in ein Feld von links, rechts bleiben Nutzer und Freunde immer sichtbar.
+      **Falle:** Zwei shadcn-Sidebars gleichzeitig gehen nicht — sie hält genau einen Zustand,
+      ein zweiter Anbieter verdeckt der Kopfzeile den ersten. Das linke Menü ist deshalb ein
+      eigenes Feld mit `translate-x`.
+- [ ] **U4. Online-Status** — **kommt mit den Sockets**, nicht über Nachfragen (siehe unten).
+      `lastSeenAt` bleibt trotzdem: beim Verbinden und Trennen gesetzt, für "zuletzt gesehen
+      vor 2 Stunden" bei allen, die gerade nicht da sind.
+- [ ] **U5. Zahlen zeigen** — gesungene Songs, Bestwert je Song in der Songliste. Gesamtpunkte
+      stehen bereits im Nutzermenü.
+- [ ] **U6. Feinschliff Startseite** — die Karten strecken sich über die volle Höhe der
+      mittleren Spalte und stehen dadurch leer; sie sollten so hoch sein wie ihr Inhalt und
+      oben andocken. Und der leere Zustand sagt dreimal dasselbe Nichts ("kein Ordner",
+      "Bibliothek öffnen", "noch nichts gesungen") — beim ersten Start sollte die Mitte
+      führen und die Karten daneben zurücktreten.
 
-Der Hintergrundverlauf aus **T6** gehört hierher: Auf einer Startseite trägt er, hinter einer
-Dateiliste wäre er nur Unruhe.
+**T6 ist erledigt** — zwei weiche Lichter in der Akzentfarbe (`.game-backdrop`), oben mittig
+und unten rechts, nur auf der Startseite. Alles über `color-mix` mit `--primary`, damit eigene
+Akzentfarben später mitziehen. Im Hellen schwächer als im Dunkeln, sonst wirkt die Seite
+eingefärbt statt beleuchtet.
+
+**Helle Fassung nachgeschärft (02.08.2026):** Hintergrund und Karten lagen mit `0.99` und `1.0`
+so dicht beieinander, dass alles flach wirkte. Jetzt `--background: 0.955`, kräftigere Ränder
+(`0.86`), Seitenleisten heller als der Hintergrund statt dunkler, dazu `shadow-sm` auf den
+Karten (`dark:shadow-none` — im Dunkeln trennt der Helligkeitsunterschied von selbst).
+
+**Karten mit Doppelrahmen:** `GameCard` mit `framed` — äußerer Rahmen, durchsichtiger
+Zwischenraum, innen die normale Karte. Lebt davon, dass hinter der Karte etwas passiert;
+auf glatter Fläche sähe der äußere Rahmen aus wie ein Versehen. Deshalb nicht die Voreinstellung.
 
 ## Konten und Server
 
@@ -464,15 +490,28 @@ tasten und herausfinden, wer hier ein Konto hat.
 - [x] **F2. Freundschaften im Backend** — ein Dokument je Beziehung mit `pairKey` (beide IDs
       sortiert), damit A→B und B→A nicht zwei werden. Gegenseitige Anfragen werden sofort zur
       Freundschaft. Wer keinen Spielernamen hat, taucht nirgends auf.
-- [x] **F3. Oberfläche** — Spielername unter "Konto", eigener Bereich "Freunde" mit Suche,
-      offenen Anfragen und Liste.
+- [x] **F3. Oberfläche** — Spielername unter "Konto", Suche, offene Anfragen und Liste. Sitzt
+      seit U3 im Feld von rechts, nicht mehr in den Einstellungen.
 - [ ] **F4. Bestenliste je Song unter Freunden** statt weltweit — die Ergebnisse liegen
       bereits (A4), es fehlt die Auswahl und die Ansicht.
-- [ ] **F5. Kleinigkeiten, wenn es benutzt wird** — Anzahl offener Anfragen sichtbar,
-      Blockieren, Begrenzung der Anfragen pro Stunde.
+- [ ] **F5. Kleinigkeiten, wenn es benutzt wird** — Blockieren, Begrenzung der Anfragen pro
+      Stunde. Die Anzahl offener Anfragen steht bereits am Symbol in der Kopfzeile.
 
-Der Bereich "Freunde" sitzt vorerst in den Einstellungen. Das ist der falsche Ort — er zieht
-mit **U3** an eine sichtbare Stelle um.
+**Sockets statt Nachfragen — entschieden am 02.08.2026.** Anwesenheit wird nicht durch
+regelmäßiges Nachfragen ermittelt, sondern über eine offene Verbindung. Begründung: Für Duelle
+braucht es ohnehin eine Verbindung, die von sich aus etwas schickt; zwei Systeme nebeneinander,
+die dasselbe halbgut können, wären der schlechtere Weg. Nachfragen wäre außerdem immer ungenau
+(bis zu 30 Sekunden Verzug, kein sauberes "ist weg").
+
+- socket.io neben Express, Anmeldung über das vorhandene Sitzungs-Cookie
+- Verbunden heißt online; `lastSeenAt` beim Verbinden und Trennen schreiben, für alle anderen
+- Einblender für Ereignisse ("Lisa hat dich hinzugefügt", später "Max fordert dich heraus") —
+  liest aus derselben Quelle und funktioniert auch bei geschlossenem Feld
+- Während des Singens keine Einblender: Ereignisse sammeln sich und erscheinen danach
+- **Grenze:** Der Gratisdienst auf Render schläft nach 15 Minuten ohne Anfragen ein. Eine
+  offene Verbindung hält ihn wach, solange jemand da ist — der Erste am Tag wartet aber bis zu
+  einer Minute. Als "immer online" fühlt sich das nicht an; irgendwann ist das ein bezahlter
+  Dienst.
 
 **Duell-Modus**
 

@@ -110,7 +110,9 @@
 }
 
 :root {
-  --background: oklch(0.99 0.004 300);
+  /* Hintergrund merklich unter den Karten: Bei fast gleicher Helligkeit verschmelzen beide,
+     und die Oberfläche wirkt flach — im Dunkeln trägt der Unterschied von selbst. */
+  --background: oklch(0.955 0.01 300);
   --foreground: oklch(0.19 0.02 300);
   --card: oklch(1 0.002 300);
   --card-foreground: oklch(0.19 0.02 300);
@@ -125,8 +127,9 @@
   --accent: oklch(0.95 0.012 300);
   --accent-foreground: oklch(0.25 0.03 300);
   --destructive: oklch(0.58 0.21 25);
-  --border: oklch(0.9 0.008 300);
-  --input: oklch(0.9 0.008 300);
+  /* Im Hellen darf ein Rand gesehen werden — bei 0.9 verschwand er auf weißen Karten. */
+  --border: oklch(0.86 0.012 300);
+  --input: oklch(0.86 0.012 300);
   --ring: oklch(0.5 0.23 310);
   --chart-1: oklch(0.56 0.23 310);
   --chart-2: oklch(0.68 0.13 200);
@@ -134,13 +137,13 @@
   --chart-4: oklch(0.75 0.16 90);
   --chart-5: oklch(0.62 0.19 20);
   --radius: 0.625rem;
-  --sidebar: oklch(0.97 0.006 300);
+  --sidebar: oklch(0.985 0.004 300);
   --sidebar-foreground: oklch(0.19 0.02 300);
   --sidebar-primary: oklch(0.5 0.23 310);
   --sidebar-primary-foreground: oklch(0.99 0.004 300);
   --sidebar-accent: oklch(0.95 0.012 300);
   --sidebar-accent-foreground: oklch(0.25 0.03 300);
-  --sidebar-border: oklch(0.9 0.008 300);
+  --sidebar-border: oklch(0.86 0.012 300);
   --sidebar-ring: oklch(0.5 0.23 310);
 
   /* Spielfeld: in beiden Fassungen gleich, weil der Spielmodus immer dunkel bleibt. */
@@ -194,4 +197,55 @@
   html {
     @apply font-sans;
   }
+}
+
+/**
+ * Der Schein hinter der Startseite.
+ *
+ * Zwei weiche Lichter in der Akzentfarbe statt eines Verlaufs über die ganze Fläche: Ein
+ * durchgehender Verlauf wirkt bei großen Flächen schnell wie ein Farbfehler, zwei Lichter
+ * geben Tiefe, ohne dass man sie als Muster wahrnimmt.
+ *
+ * Alles über `--primary` — damit zieht der Hintergrund automatisch mit, wenn der User später
+ * seine eigene Akzentfarbe wählt (T4b).
+ */
+.game-backdrop {
+  background-image:
+    radial-gradient(
+      ellipse 80% 55% at 50% -10%,
+      color-mix(in oklab, var(--primary) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 50% at 85% 110%,
+      color-mix(in oklab, var(--primary) 14%, transparent),
+      transparent 70%
+    );
+}
+
+/* Im Hellen trägt dieselbe Farbe weiter — aber der Grund ist jetzt dunkler und verträgt mehr. */
+:root:not(.dark) .game-backdrop {
+  background-image:
+    radial-gradient(
+      ellipse 80% 55% at 50% -10%,
+      color-mix(in oklab, var(--primary) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 50% at 85% 110%,
+      color-mix(in oklab, var(--primary) 11%, transparent),
+      transparent 70%
+    );
+}
+
+/**
+ * Das Freunde-Feld legt sich über den Inhalt, statt ihn zur Seite zu schieben.
+ *
+ * Die Sidebar hält im Fluss eine Lücke frei, so breit wie sie selbst — gedacht für eine
+ * Navigation, die dauerhaft steht. Bei uns geht das Feld auf und wieder zu; die Songliste
+ * würde dabei jedes Mal neu umbrechen. Die Lücke bleibt deshalb bei null, das Feld selbst
+ * liegt ohnehin fest positioniert darüber.
+ */
+.app-shell [data-slot="sidebar-gap"] {
+  width: 0;
 }
