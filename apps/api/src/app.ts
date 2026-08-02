@@ -9,7 +9,9 @@ import { env } from "./config/env.js";
 import { isConnected } from "./db/connect.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
 import { getAuth } from "./modules/auth/auth.js";
+import { friendsRouter } from "./modules/friends/friend.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
+import { profileRouter } from "./modules/profile/profile.routes.js";
 import { scoresRouter } from "./modules/scores/score.routes.js";
 
 /**
@@ -48,6 +50,8 @@ export function createApp(): Express {
   app.use(cookieParser());
 
   app.use("/health", healthRouter);
+  app.use("/friends", friendsRouter);
+  app.use("/profile", profileRouter);
   app.use("/scores", scoresRouter);
 
   app.use(notFoundHandler);

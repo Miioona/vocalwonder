@@ -6,6 +6,9 @@ export const CONFIG = {
       HEALTH: "/health",
       SCORES: "/scores",
       MY_SCORES: "/scores/me",
+      MY_PROFILE: "/profile/me",
+      NAME_AVAILABLE: "/profile/name-available",
+      FRIENDS: "/friends",
     },
   },
 } as const;

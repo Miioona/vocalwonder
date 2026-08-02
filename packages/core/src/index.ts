@@ -27,6 +27,16 @@ export {
   pitchClassDistance,
 } from "./pitch";
 
+export type { FriendEntry, FriendList, FriendStatus, PlayerSearchResult } from "./friends";
+
+export type { PlayerProfile, PublicPlayer } from "./profile";
+export {
+  PLAYER_NAME_MAX,
+  PLAYER_NAME_MIN,
+  PLAYER_NAME_PATTERN,
+  normalizePlayerName,
+} from "./profile";
+
 export type { SongScore, SongScoreInput } from "./scores";
 
 export type { NoteScore, ScoreSettings, ScoreSnapshot, Scorer } from "./scoring";

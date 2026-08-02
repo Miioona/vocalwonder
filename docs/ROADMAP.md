@@ -338,6 +338,58 @@ Nachmittag Fleißarbeit.
       Select, Label, Button.
       **Falle:** shadcn legt seine Farben in der hellen Fassung an und schaltet über die Klasse
       `dark` um. Ohne die Klasse am `<html>` sind alle Bausteine weiß.
+- [ ] **T6. Verlauf im Hintergrund** — der Grundhintergrund ist heute eine glatte Fläche
+      (`--background`, hell und dunkel bereits vorhanden). Ein sanfter Schein von oben oder ein
+      Hauch Textur würde dem Explorer mehr Tiefe geben, ohne von den Songs abzulenken. Muss in
+      beiden Fassungen funktionieren und über dieselben Tokens laufen, damit T4b später
+      mitzieht.
+
+## Startseite und Navigation — nach einem Spiel aussehen
+
+Besprochen am 02.08.2026. Auslöser: Wer wissen will, ob er angemeldet ist oder wer von seinen
+Freunden da ist, muss heute erst in die Einstellungen. Das gehört auf den ersten Blick.
+Vorbild bleibt GeoGuessr — Hauptmenü mit Karten, Nutzermenü oben rechts, gesperrte Bereiche
+sichtbar statt versteckt.
+
+**Pfade**
+
+- `/` — Startseite, Hauptmenü
+- `/songs` — der Explorer, inhaltlich unverändert
+- später `/freunde`, `/bestenlisten`
+- Der **Spielbildschirm bleibt eine Überlagerung**, kein eigener Pfad. Begründung: Nach einem
+  echten Neuladen wären Ordnerfreigabe, Mikrofon und Audiokontext neu zu erfragen, und alle
+  drei brauchen eine Nutzergeste. Als Überlagerung kann der Fall nicht eintreten.
+
+**Kein Hindernis:** Der Zustand-Store überlebt Seitenwechsel — Next wechselt ohne Neuladen,
+der Store liegt im Modul. Nur ein echtes Neuladen leert ihn; der Ordner-Handle kommt dann aus
+IndexedDB zurück, die Berechtigung dafür braucht aber meist einen Klick.
+
+**Aufbau der Startseite**
+
+- Kopfzeile: Logo, Bereiche (Singen, Duell, Freunde, Bestenliste), rechts das **Nutzermenü**
+  mit Avatar, Name und Punkten — darin Einstellungen, Freunde, Abmelden
+- Mitte: Cover des zuletzt gesungenen Songs, darunter der große **Singen**-Knopf
+- Links: Bibliothek (Anzahl Songs, wie viele analysiert, Ordner wechseln)
+- Rechts: die letzten Ergebnisse
+- **Ohne Anmeldung** sind Duell, Freunde und Bestenliste grau mit Schloss, statt zu fehlen.
+  Angefasst: "Dafür brauchst du ein Konto", mehr nicht
+- Abweichung vom Vorbild: Eine tägliche Herausforderung geht nicht — GeoGuessr hat für alle
+  dieselbe Welt, unsere Songs liegen lokal und sind bei jedem andere
+
+- [ ] **U1. Gerüst** — `/songs` anlegen, `/` wird Startseite, gemeinsame Kopfzeile ins Layout,
+      `restore()` eine Ebene höher (heute im Explorer, die Startseite braucht die Bibliothek
+      aber auch).
+- [ ] **U2. Karten füllen** — Bibliothek, zuletzt gesungen, Verlauf.
+- [ ] **U3. Freunde einbauen** — erst hier entscheidet sich, ob sie eine eigene Seite brauchen
+      oder als Karte reichen.
+- [ ] **U4. Online-Status ohne Sockets** — Lebenszeichen alle 60 Sekunden, solange der Tab
+      sichtbar ist, dazu `lastSeenAt` im Profil. Online heißt: vor weniger als zwei Minuten
+      gesehen. Echte Verbindungen erst fürs Duell.
+- [ ] **U5. Zahlen zeigen** — Gesamtpunkte, gesungene Songs, Bestwert je Song in der Songliste.
+      Der Teil, der aus einer Dateiliste ein Spiel macht.
+
+Der Hintergrundverlauf aus **T6** gehört hierher: Auf einer Startseite trägt er, hinter einer
+Dateiliste wäre er nur Unruhe.
 
 ## Konten und Server
 
@@ -350,6 +402,11 @@ liegen beim User. Ein Konto bringt Abgleich zwischen Geräten, Bestenlisten und 
   Duelle dazukommen sollen. Express bleibt; für Duelle kommt später socket.io oder Colyseus
   daneben. **Hosting-Grenze:** Vercel kann keine dauerhaften Verbindungen halten, das Backend
   braucht einen laufenden Prozess (Railway, Fly.io, Render, eigener Server).
+  **Stand 01.08.2026:** Backend läuft auf **Render** (`vocalwonder-api`, Gratisstufe, schläft
+  nach 15 Minuten ein), Frontend auf **Vercel** (`vocalwonder-web.vercel.app`). Offen: Chrome
+  blockt den Google-Rücksprung auf der `onrender.com`-Adresse über Safe Browsing. Ausweg ohne
+  eigene Domain wäre ein `rewrites`-Eintrag in `next.config.ts`, der `/api/*` an Render
+  weiterreicht — dann liefe die Anmeldung über die Vercel-Adresse.
 - **MongoDB**, weil vorhandene Erfahrung schwerer wiegt als die Vorteile von Postgres bei
   diesem Datenzuschnitt.
 - **Punkte werden von Anfang an gespeichert** — jedes gespielte Ergebnis, nicht nur Bestwerte.
@@ -388,6 +445,45 @@ wäre ein Hinweis statt eines Verschwindens:
 - **Von Hand bearbeitet:** immer **grün**, mit dem Vermerk "selbst bearbeitet", unabhängig von
   der Fassung. Handarbeit wird nie als veraltet dargestellt und nie automatisch ersetzt
   (siehe Editor-Modus).
+
+## Freundesliste und Duell-Modus
+
+Vorgemerkt am 02.08.2026, als Nächstes dran. Beides setzt Konten voraus (siehe oben) und ist
+der Grund, warum das Backend ein eigener Prozess ist und nicht in Next-Routen liegt.
+
+**Freundesliste**
+
+Gesucht wird über den **Spielernamen** (Präfix) oder die **genaue E-Mail** — entschieden am
+02.08.2026. Teiltreffer auf E-Mails gibt es bewusst nicht, sonst ließe sich durch Adressen
+tasten und herausfinden, wer hier ein Konto hat.
+
+- [x] **F1. Spielername im Backend** — eigene Sammlung `profile` neben den Sammlungen von
+      better-auth, `playerNameLower` eindeutig. Die Eindeutigkeit entscheidet die Datenbank,
+      nicht eine Abfrage davor: Zwischen "ist frei?" und "dann nimm ihn" passt genau der
+      Moment, in dem ihn jemand anderes bekommt.
+- [x] **F2. Freundschaften im Backend** — ein Dokument je Beziehung mit `pairKey` (beide IDs
+      sortiert), damit A→B und B→A nicht zwei werden. Gegenseitige Anfragen werden sofort zur
+      Freundschaft. Wer keinen Spielernamen hat, taucht nirgends auf.
+- [x] **F3. Oberfläche** — Spielername unter "Konto", eigener Bereich "Freunde" mit Suche,
+      offenen Anfragen und Liste.
+- [ ] **F4. Bestenliste je Song unter Freunden** statt weltweit — die Ergebnisse liegen
+      bereits (A4), es fehlt die Auswahl und die Ansicht.
+- [ ] **F5. Kleinigkeiten, wenn es benutzt wird** — Anzahl offener Anfragen sichtbar,
+      Blockieren, Begrenzung der Anfragen pro Stunde.
+
+Der Bereich "Freunde" sitzt vorerst in den Einstellungen. Das ist der falsche Ort — er zieht
+mit **U3** an eine sichtbare Stelle um.
+
+**Duell-Modus**
+
+- Zwei Leute singen denselben Song, am Ende gewinnt die höhere Punktzahl
+- Erste Frage ist nicht die Technik, sondern **woher beide denselben Song haben**: Die Musik
+  liegt lokal, geteilt wird höchstens der Chart. Naheliegend: Duell nur, wenn beide Seiten
+  dieselbe Datei besitzen (Abgleich über den Datei-Hash) — sonst gibt es nichts zu vergleichen
+- Zweite Frage: gleichzeitig oder nacheinander. Nacheinander ist deutlich einfacher (keine
+  laufende Verbindung nötig, nur ein Ergebnis hin und her) und wäre der bessere erste Schritt
+- Gleichzeitig braucht dann socket.io oder Colyseus neben Express, plus Lobby, Bereitschaft
+  und einen gemeinsamen Start
 
 ## Editor-Modus
 
