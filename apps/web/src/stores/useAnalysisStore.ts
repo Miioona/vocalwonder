@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { readAnalysis, readFileWithKey, writeAnalysis } from "@/lib/analysis/cache";
 import { runAnalysis, type AnalysisRun } from "@/lib/analysis/run-analysis";
+import { matchesCurrentVersion, readShippedChart } from "@/lib/analysis/shipped-chart";
 import type { AnalysisProgress, AnalysisResult } from "@/lib/analysis/types";
 import type { AudioFile } from "@/lib/song-explorer/types";
 
@@ -65,8 +66,14 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       // Kostet einmal das Lesen der Datei fürs Hashen — der Schlüssel hängt am Inhalt,
       // damit ein umbenannter Song sein Ergebnis behält.
       const { key } = await readFileWithKey(file);
-      const stored = await readAnalysis(key);
+      const cached = await readAnalysis(key);
+
+      // Beispielsongs bringen ihren Chart mit; für alles andere ist hier Schluss, wenn im
+      // Cache nichts liegt.
+      const stored = cached ?? (await readShippedChart(file, key));
       if (!stored) return;
+
+      if (!cached && matchesCurrentVersion(stored)) await writeAnalysis(key, stored);
 
       // Ergebnisse von vor der Einführung des Hashes nachrüsten — der Schlüssel ist ja
       // genau dieser Hash. Sonst ließe sich ein Ergebnis keinem Song zuordnen, und das

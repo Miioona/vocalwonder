@@ -17,6 +17,11 @@ export interface DemoCredit {
 
 export interface DemoSong extends AudioFile {
   url: string;
+  /**
+   * Fertiger Chart neben der Datei. Erspart die Analyse — die dauert ungefähr so lange wie
+   * der Song selbst, und so lange sieht sich niemand ein fremdes Projekt an.
+   */
+  chartUrl: string;
   credit: DemoCredit;
 }
 
@@ -31,6 +36,7 @@ export const DEMO_SONGS: DemoSong[] = [
     path: "demos/Josh Woodward - The Voices.mp3",
     name: "Josh Woodward - The Voices.mp3",
     url: "/demos/Josh%20Woodward%20-%20The%20Voices.mp3",
+    chartUrl: "/demos/Josh%20Woodward%20-%20The%20Voices.chart.json",
     credit: {
       title: "The Voices",
       artist: "Josh Woodward",
@@ -45,6 +51,7 @@ export const DEMO_SONGS: DemoSong[] = [
     path: "demos/Franzi Kruth - Chasing Clouds.mp3",
     name: "Franzi Kruth - Chasing Clouds.mp3",
     url: "/demos/Franzi%20Kruth%20-%20Chasing%20Clouds.mp3",
+    chartUrl: "/demos/Franzi%20Kruth%20-%20Chasing%20Clouds.chart.json",
     credit: {
       title: "Chasing Clouds",
       artist: "Franzi Kruth",
@@ -55,3 +62,8 @@ export const DEMO_SONGS: DemoSong[] = [
     },
   },
 ];
+
+/** Ob ein Song aus der Bibliothek kommt oder mitgeliefert ist — erkennbar am Pfad. */
+export function findDemoSong(path: string): DemoSong | undefined {
+  return DEMO_SONGS.find((song) => song.path === path);
+}

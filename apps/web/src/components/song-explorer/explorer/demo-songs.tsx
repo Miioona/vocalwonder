@@ -38,6 +38,12 @@ export const DemoSongs = () => {
         </button>
       ))}
 
+      <p className="mt-1 text-xs text-muted-foreground">
+        Diese beiden Songs sind bereits analysiert und können sofort gestartet werden. Eigene Songs
+        können neu analysiert werden. Eine Berechnung dauert etwa so lange wieder die Länge des
+        Songs.
+      </p>
+
       {/* CC BY verlangt die Nennung dort, wo die Musik benutzt wird. */}
       <p className="mt-1 text-xs text-muted-foreground">
         {DEMO_SONGS.map((song, index) => (
