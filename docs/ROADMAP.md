@@ -524,6 +524,62 @@ die dasselbe halbgut können, wären der schlechtere Weg. Nachfragen wäre auße
 - Gleichzeitig braucht dann socket.io oder Colyseus neben Express, plus Lobby, Bereitschaft
   und einen gemeinsamen Start
 
+## Spielmodi
+
+Idee vom 02.08.2026. Es soll **mehrere Modi** geben, die der **User vor dem Start auswählt**:
+
+- **Klassisch** — wie heute: Tonhöhe im Trefferbereich, Punkte je getroffener Millisekunde
+- **Rap-Battle** — Timing statt Tonhöhe, siehe unten
+- weitere später
+
+Der Song weiß davon nichts. Er wird analysiert wie immer, der Modus liegt beim Spielen obendrauf
+— dieselbe Datei kann klassisch und als Rap-Battle gespielt werden. Ob ein Song später einmal
+mit einem **Rap-Preset analysiert** wurde (siehe "Voreinstellungen pro Genre"), ist eine davon
+unabhängige Frage: Das Preset bestimmt, wie die Balken entstehen, der Modus, wie sie gewertet
+werden.
+
+### Modus: Rap-Battle — Timing statt Tonhöhe
+
+Gedacht für Rap und Sprechgesang: Dort passiert in der Tonhöhe wenig, die klassische Wertung
+hat entsprechend wenig zu bewerten.
+
+- **Gewertet wird der Zeitpunkt.** Man muss die Balken punktgenau treffen — Einsatz und Länge
+  zählen, die Tonhöhe gar nicht oder nur am Rande
+- **Singen außerhalb eines Balkens kostet Punkte.** Anders als heute, wo Danebensingen
+  schlicht nichts einbringt. Wer durchgehend mitredet, soll nicht so weit kommen wie jemand,
+  der die Pausen trifft
+
+**Offene Fragen, wenn es soweit ist:**
+
+- Abzug wie hoch im Verhältnis zum Gewinn? Zu hart, und ein einziger Huster ruiniert den
+  Durchgang; zu weich, und Dauerrappen bleibt die beste Taktik
+- Tonhöhe ganz raus oder mit kleinem Gewicht? Ganz raus ist ehrlicher zur Idee, ein kleines
+  Gewicht würde monotones Brummen von tatsächlichem Sprechen unterscheiden
+- Wo wird der Modus ausgewählt? Naheliegend vor dem Start, dort wo heute "Spielen" steht —
+  und die Wahl gehört später mit ins gespeicherte Ergebnis, sonst sind Punkte aus
+  verschiedenen Modi nicht vergleichbar
+
+### Ein Durchgang, beide Charts — entschieden am 02.08.2026
+
+Balken aus der Tonhöhenkurve taugen für den Rap-Modus nur bedingt: Wo die Automatik nichts
+erkennt, gibt es auch nichts zu treffen. Der Rap-Modus braucht deshalb eigene Balken, gebaut
+aus den **Einsätzen der Gesangsspur** (Lautstärke-Hüllkurve plus Spitzensuche) statt aus der
+Tonhöhe — ein eigener Weg neben `build-notes.ts`, kein Parameter daran.
+
+**Beides entsteht künftig in derselben Analyse**, nicht auf Zuruf. Gründe:
+
+- Der Aufwand steckt fast vollständig in der **Stem-Trennung** (~0,95× Echtzeit, also gut vier
+  Minuten je Vierminüter). Tonhöhenkurve sind Sekunden, Notenbildung Millisekunden, die
+  Einsatzerkennung noch weniger. Beide Wege teilen sich die Trennung und laufen auf derselben,
+  bereits im Speicher liegenden Spur — der Aufschlag liegt im niedrigen einstelligen Prozent
+- **Nachträglich wäre es teuer:** Gespeichert wird nur das Ergebnis, nicht die getrennten
+  Spuren. Ein zweiter Chart später kostet die vollen vier Minuten Trennung noch einmal. Die
+  Gesangsspur aufzuheben ist keine Alternative — roh rund 85 MB je Song
+- Gespeichert kommen ein paar Kilobyte dazu
+
+Folge fürs Ergebnis der Analyse: Es trägt künftig **zwei Notenlisten**, nicht eine. Betrifft
+`AnalysisResult`, den Cache und `ANALYSIS_VERSION`.
+
 ## Editor-Modus
 
 Ein Bildschirm, in dem der User den Chart eines Songs von Hand nachbessert. Wird auf Dauer

@@ -4,7 +4,10 @@ export interface AudioFile {
   /** Pfad relativ zum Songordner, z. B. "Queen/Bohemian Rhapsody.mp3". */
   path: string;
   name: string;
-  handle: FileSystemFileHandle;
+  /** Songs aus der Bibliothek des Users. Fehlt bei mitgelieferten Beispielsongs. */
+  handle?: FileSystemFileHandle;
+  /** Mitgelieferte Beispielsongs. Fehlt bei Songs aus der Bibliothek. */
+  url?: string;
 }
 
 export interface SubFolder {

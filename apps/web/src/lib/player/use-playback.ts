@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { openFile } from "@/lib/song-explorer/open-file";
 import type { AudioFile } from "@/lib/song-explorer/types";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { AudioEngine } from "./audio-engine";
@@ -30,7 +31,7 @@ export const usePlayback = (song: AudioFile) => {
 
     void (async () => {
       try {
-        const blob = await song.handle.getFile();
+        const blob = await openFile(song);
         await engine.load(blob);
         if (cancelled) return;
 

@@ -92,6 +92,37 @@ export const SeparationSpike = () => {
     startPlaying(song);
   };
 
+  /**
+   * Chart als Datei, zum Mitliefern neben einem Beispielsong.
+   *
+   * Ohne die Tonhöhenkurve: Die ist mit einem Rahmen alle 10 ms der weitaus größte Teil, und
+   * außerhalb der Analyse fasst sie niemand an — weder Spielbildschirm noch Wertung.
+   */
+  const exportChart = () => {
+    if (!file || !chart) return;
+
+    const payload = {
+      chart,
+      meta: {
+        model: modelKey,
+        version: ANALYSIS_VERSION,
+        createdAt: new Date().toISOString(),
+        durationMs: analysedMs,
+        separationMs: result?.totalMs ?? 0,
+      },
+    };
+
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+    );
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${file.name.replace(/\.[^.]+$/, "")}.chart.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const play = (withVocals: boolean) => {
     if (!chart) return;
     playback?.stop();
@@ -160,8 +191,7 @@ export const SeparationSpike = () => {
         <h1 className="text-xl font-semibold">Spike: Stem-Trennung</h1>
         <p className="text-sm text-muted-foreground">
           HT-Demucs als ONNX im Browser. Misst Ladezeit, Rechenzeit und liefert den Gesangs-Stem zum
-          Anhören. Läuft auf dem Hauptthread — die Seite ruckelt währenddessen, das ist beim Messen
-          so gewollt.
+          Anhören.
         </p>
       </header>
 
@@ -281,6 +311,9 @@ export const SeparationSpike = () => {
             </Button>
             <Button variant="outline" onClick={stopPlayback} disabled={!playback}>
               Stopp
+            </Button>
+            <Button variant="outline" onClick={exportChart}>
+              Chart exportieren
             </Button>
           </div>
 

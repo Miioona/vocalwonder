@@ -121,7 +121,17 @@ export async function loadModel(
   }
 
   // Kopie für den Cache, damit der Puffer hier nicht abgeräumt wird.
-  await cache.put(url, new Response(bytes.slice().buffer));
+  //
+  // Scheitert das Ablegen, läuft die Analyse trotzdem weiter — die Bytes sind ja da. Bei einem
+  // Modell dieser Größe ist der Speicher des Browsers schnell voll, und dann kommt hier ein
+  // "Unexpected internal error". Der zweite Lauf lädt dann eben erneut herunter; das ist
+  // ärgerlich, aber kein Grund abzubrechen.
+  try {
+    await cache.put(url, new Response(bytes.slice().buffer));
+  } catch (err) {
+    console.error("[separation] Modell konnte nicht zwischengespeichert werden", err);
+  }
+
   return bytes.buffer;
 }
 

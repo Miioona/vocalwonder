@@ -4,6 +4,7 @@ import type { AnalysisMessage, AnalysisRequest } from "./analysis-worker";
 import { decodeBytesForModel } from "./audio-io";
 import { loadMetadata } from "@/lib/song-explorer/metadata-cache";
 import { readAnalysis, readFileWithKey, writeAnalysis } from "./cache";
+import { matchesCurrentVersion, readShippedChart } from "./shipped-chart";
 import type { AnalysisProgress, AnalysisResult } from "./types";
 
 export interface AnalysisRun {
@@ -31,6 +32,13 @@ export function runAnalysis(
 
     const cached = await readAnalysis(key);
     if (cached) return cached;
+
+    // Beispielsongs bringen ihren Chart mit — dann gibt es nichts zu rechnen.
+    const shipped = await readShippedChart(file, key);
+    if (shipped) {
+      if (matchesCurrentVersion(shipped)) await writeAnalysis(key, shipped);
+      return shipped;
+    }
 
     onProgress({ stage: "decode", message: "Song wird dekodiert …" });
     const audio = await decodeBytesForModel(bytes);

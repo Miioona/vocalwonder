@@ -1,5 +1,6 @@
 import { parseBlob } from "music-metadata";
 
+import { openFile } from "./open-file";
 import type { AudioFile, SongMetadata } from "./types";
 
 /**
@@ -23,7 +24,7 @@ export async function readSongMetadata(
   file: AudioFile,
   { precise = false }: ReadMetadataOptions = {},
 ): Promise<SongMetadata> {
-  const blob = await file.handle.getFile();
+  const blob = await openFile(file);
 
   const { common, format } = await parseBlob(blob, { duration: precise });
 

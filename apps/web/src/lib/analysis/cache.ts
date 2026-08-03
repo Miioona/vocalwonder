@@ -1,5 +1,6 @@
 import { createStore, del, get, set } from "idb-keyval";
 
+import { openFile } from "@/lib/song-explorer/open-file";
 import type { AudioFile } from "@/lib/song-explorer/types";
 import { ANALYSIS_VERSION, type AnalysisResult } from "./types";
 
@@ -56,7 +57,7 @@ export async function readFileWithKey(file: AudioFile): Promise<{
   bytes: ArrayBuffer;
   key: string;
 }> {
-  const blob = await file.handle.getFile();
+  const blob = await openFile(file);
   const bytes = await blob.arrayBuffer();
   return { bytes, key: await fileKey(bytes) };
 }

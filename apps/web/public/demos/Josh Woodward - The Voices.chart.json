@@ -1,0 +1,953 @@
+{
+  "chart": {
+    "title": "Josh Woodward - The Voices.mp3",
+    "artist": "",
+    "source": "analysis",
+    "phrases": [
+      {
+        "startMs": 13720,
+        "endMs": 22500,
+        "notes": [
+          {
+            "startMs": 13720,
+            "durationMs": 90,
+            "midi": 60.953861236572266,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 13810,
+            "durationMs": 520,
+            "midi": 72.9499282836914,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 14330,
+            "durationMs": 950,
+            "midi": 60.04402734856856,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 15280,
+            "durationMs": 810,
+            "midi": 58.00413513183594,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 16320,
+            "durationMs": 780,
+            "midi": 60.00597381591797,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 17260,
+            "durationMs": 180,
+            "midi": 72.96649169921875,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 17510,
+            "durationMs": 200,
+            "midi": 72.98011779785156,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 17710,
+            "durationMs": 210,
+            "midi": 61.01591873168945,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 17920,
+            "durationMs": 170,
+            "midi": 72.99481201171875,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 18090,
+            "durationMs": 560,
+            "midi": 60.20768356323242,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 18650,
+            "durationMs": 700,
+            "midi": 57.98297892979213,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 19600,
+            "durationMs": 120,
+            "midi": 51.17453384399414,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 19780,
+            "durationMs": 170,
+            "midi": 72.70576611687156,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 19950,
+            "durationMs": 200,
+            "midi": 60.68410873413086,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 20150,
+            "durationMs": 370,
+            "midi": 58.08845757149361,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 20620,
+            "durationMs": 330,
+            "midi": 58.0892333984375,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 20980,
+            "durationMs": 570,
+            "midi": 56.045372009277344,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 21610,
+            "durationMs": 230,
+            "midi": 51.33944320678711,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 21850,
+            "durationMs": 650,
+            "midi": 53.01648712158203,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 23650,
+        "endMs": 35750,
+        "notes": [
+          {
+            "startMs": 23650,
+            "durationMs": 240,
+            "midi": 56.02035140991211,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 23890,
+            "durationMs": 220,
+            "midi": 68.02273559570312,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 24110,
+            "durationMs": 120,
+            "midi": 55.9582633972168,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 24230,
+            "durationMs": 430,
+            "midi": 57.92086410522461,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 24750,
+            "durationMs": 1450,
+            "midi": 58.00347137451172,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 26450,
+            "durationMs": 470,
+            "midi": 57.986305236816406,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 26920,
+            "durationMs": 410,
+            "midi": 60.012943267822266,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 27330,
+            "durationMs": 90,
+            "midi": 72.07247924804688,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 27420,
+            "durationMs": 380,
+            "midi": 72.95850372314453,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 27800,
+            "durationMs": 570,
+            "midi": 60.97105407714844,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 28630,
+            "durationMs": 1750,
+            "midi": 60.67365264892578,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 30380,
+            "durationMs": 480,
+            "midi": 58.04758405685425,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 30980,
+            "durationMs": 220,
+            "midi": 57.8249397277832,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 31200,
+            "durationMs": 470,
+            "midi": 56.02729034423828,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 32000,
+            "durationMs": 510,
+            "midi": 54.12733459472656,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 32660,
+            "durationMs": 760,
+            "midi": 53.2310676574707,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 33530,
+            "durationMs": 230,
+            "midi": 53.010475158691406,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 33880,
+            "durationMs": 400,
+            "midi": 56.05305480957031,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 34330,
+            "durationMs": 70,
+            "midi": 79.75521850585938,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 34460,
+            "durationMs": 460,
+            "midi": 57.967437744140625,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 34930,
+            "durationMs": 110,
+            "midi": 76.85395050048828,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 35050,
+            "durationMs": 700,
+            "midi": 57.0510368347168,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 36730,
+        "endMs": 40850,
+        "notes": [
+          {
+            "startMs": 36730,
+            "durationMs": 150,
+            "midi": 50.56807327270508,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 36880,
+            "durationMs": 100,
+            "midi": 61.30240249633789,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 36980,
+            "durationMs": 110,
+            "midi": 72.87580871582031,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 37090,
+            "durationMs": 110,
+            "midi": 61.09416198730469,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 37200,
+            "durationMs": 420,
+            "midi": 73.03910064697266,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 37890,
+            "durationMs": 1180,
+            "midi": 61.00456619262695,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 39070,
+            "durationMs": 160,
+            "midi": 73.45943450927734,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 39230,
+            "durationMs": 260,
+            "midi": 75.1072006225586,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 39490,
+            "durationMs": 90,
+            "midi": 73.46276092529297,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 39580,
+            "durationMs": 110,
+            "midi": 62.893699645996094,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 39960,
+            "durationMs": 890,
+            "midi": 61.036224365234375,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 54980,
+        "endMs": 76970,
+        "notes": [
+          {
+            "startMs": 54980,
+            "durationMs": 250,
+            "midi": 61.05609130859375,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 55230,
+            "durationMs": 260,
+            "midi": 72.93791198730469,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 55490,
+            "durationMs": 350,
+            "midi": 60.36940002441406,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 55840,
+            "durationMs": 490,
+            "midi": 71.93546295166016,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 56330,
+            "durationMs": 350,
+            "midi": 59.74366760253906,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 56680,
+            "durationMs": 600,
+            "midi": 57.92033004760742,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 57440,
+            "durationMs": 70,
+            "midi": 63.499778747558594,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 57630,
+            "durationMs": 300,
+            "midi": 72.00093841552734,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 57930,
+            "durationMs": 260,
+            "midi": 59.893028259277344,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 58310,
+            "durationMs": 170,
+            "midi": 61.00257873535156,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 58490,
+            "durationMs": 70,
+            "midi": 79.6776123046875,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 58560,
+            "durationMs": 1250,
+            "midi": 60.80947494506836,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 59940,
+            "durationMs": 440,
+            "midi": 58.007205963134766,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 60770,
+            "durationMs": 70,
+            "midi": 53.08195877075195,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 60960,
+            "durationMs": 240,
+            "midi": 61.20929718017578,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 61210,
+            "durationMs": 80,
+            "midi": 72.08380126953125,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 61350,
+            "durationMs": 400,
+            "midi": 58.11141586303711,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 61850,
+            "durationMs": 300,
+            "midi": 58.068626403808594,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 62150,
+            "durationMs": 750,
+            "midi": 56.036197662353516,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 62920,
+            "durationMs": 90,
+            "midi": 51.92013931274414,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 63020,
+            "durationMs": 100,
+            "midi": 39.84507751464844,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 63120,
+            "durationMs": 80,
+            "midi": 56.943119049072266,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 63200,
+            "durationMs": 330,
+            "midi": 41.05147483132102,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 63550,
+            "durationMs": 550,
+            "midi": 53.035614013671875,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 64850,
+            "durationMs": 100,
+            "midi": 56.24333190917969,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 65040,
+            "durationMs": 280,
+            "midi": 56.02130889892578,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 65320,
+            "durationMs": 1460,
+            "midi": 57.96567705232803,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 66780,
+            "durationMs": 90,
+            "midi": 67.92427062988281,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 66880,
+            "durationMs": 570,
+            "midi": 58.00515365600586,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 67630,
+            "durationMs": 70,
+            "midi": 69.88102722167969,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 67700,
+            "durationMs": 240,
+            "midi": 58.01466751098633,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 68060,
+            "durationMs": 240,
+            "midi": 72.13573455810547,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 68300,
+            "durationMs": 160,
+            "midi": 59.8943977355957,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 68460,
+            "durationMs": 620,
+            "midi": 73.01616668701172,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 69140,
+            "durationMs": 130,
+            "midi": 72.9146728515625,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 69330,
+            "durationMs": 130,
+            "midi": 73.02464294433594,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 69740,
+            "durationMs": 110,
+            "midi": 62.961814880371094,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 69850,
+            "durationMs": 450,
+            "midi": 60.95766067504883,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 70400,
+            "durationMs": 420,
+            "midi": 60.728981018066406,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 70880,
+            "durationMs": 110,
+            "midi": 60.040870666503906,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 71000,
+            "durationMs": 70,
+            "midi": 72.0754623413086,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 71070,
+            "durationMs": 200,
+            "midi": 60.119224548339844,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 71270,
+            "durationMs": 100,
+            "midi": 71.72903442382812,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 71370,
+            "durationMs": 120,
+            "midi": 59.9581298828125,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 71490,
+            "durationMs": 440,
+            "midi": 58.20246887207031,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 72110,
+            "durationMs": 180,
+            "midi": 58.03787612915039,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 72330,
+            "durationMs": 820,
+            "midi": 56.04060745239258,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 73150,
+            "durationMs": 490,
+            "midi": 54.16020202636719,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 73820,
+            "durationMs": 180,
+            "midi": 72.92468770345052,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 74060,
+            "durationMs": 90,
+            "midi": 64.83474731445312,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 74170,
+            "durationMs": 130,
+            "midi": 53.84018325805664,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 74300,
+            "durationMs": 630,
+            "midi": 53.021339416503906,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 74930,
+            "durationMs": 450,
+            "midi": 56.04667663574219,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 75390,
+            "durationMs": 280,
+            "midi": 78.64073290143695,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 75670,
+            "durationMs": 100,
+            "midi": 58.039180755615234,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 75780,
+            "durationMs": 70,
+            "midi": 77.2864761352539,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 75850,
+            "durationMs": 1120,
+            "midi": 57.0921745300293,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 78240,
+        "endMs": 81900,
+        "notes": [
+          {
+            "startMs": 78240,
+            "durationMs": 90,
+            "midi": 62.038570404052734,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 78330,
+            "durationMs": 220,
+            "midi": 61.04590606689453,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 78620,
+            "durationMs": 70,
+            "midi": 79.75352478027344,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 78690,
+            "durationMs": 430,
+            "midi": 60.87855529785156,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 79130,
+            "durationMs": 310,
+            "midi": 79.2793960571289,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 79440,
+            "durationMs": 100,
+            "midi": 61.07609558105469,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 79550,
+            "durationMs": 70,
+            "midi": 72.92911529541016,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 79620,
+            "durationMs": 450,
+            "midi": 60.93916702270508,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 80070,
+            "durationMs": 130,
+            "midi": 59.26740264892578,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 80200,
+            "durationMs": 130,
+            "midi": 73.08620922382062,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 80330,
+            "durationMs": 240,
+            "midi": 75.01403045654297,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 80580,
+            "durationMs": 1320,
+            "midi": 61.079383850097656,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 95540,
+        "endMs": 96430,
+        "notes": [
+          {
+            "startMs": 95540,
+            "durationMs": 80,
+            "midi": 76.93804168701172,
+            "text": "",
+            "type": "normal"
+          },
+          {
+            "startMs": 96070,
+            "durationMs": 360,
+            "midi": 76.96585845947266,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 98590,
+        "endMs": 98710,
+        "notes": [
+          {
+            "startMs": 98590,
+            "durationMs": 120,
+            "midi": 67.0235366821289,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 99610,
+        "endMs": 99710,
+        "notes": [
+          {
+            "startMs": 99610,
+            "durationMs": 100,
+            "midi": 78.00322723388672,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      },
+      {
+        "startMs": 100880,
+        "endMs": 100960,
+        "notes": [
+          {
+            "startMs": 100880,
+            "durationMs": 80,
+            "midi": 78.43439483642578,
+            "text": "",
+            "type": "normal"
+          }
+        ]
+      }
+    ],
+    "meta": {}
+  },
+  "meta": {
+    "model": "webgpu",
+    "version": 3,
+    "createdAt": "2026-08-03T17:31:38.677Z",
+    "durationMs": 200717.66439909296,
+    "separationMs": 125430.5
+  }
+}
