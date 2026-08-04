@@ -44,6 +44,11 @@ export async function setPlayerName(userId: string, playerName: string): Promise
   }
 }
 
+/** Beim Trennen der letzten Verbindung. Fehlt ein Profil, gibt es nichts zu merken. */
+export async function touchLastSeen(userId: string): Promise<void> {
+  await ProfileModel.updateOne({ userId }, { lastSeenAt: new Date() });
+}
+
 /** Nur für die Rückmeldung beim Tippen — verbindlich ist erst das Speichern. */
 export async function isPlayerNameAvailable(playerName: string, userId: string): Promise<boolean> {
   const doc = await ProfileModel.findOne({

@@ -472,10 +472,11 @@ wäre ein Hinweis statt eines Verschwindens:
   der Fassung. Handarbeit wird nie als veraltet dargestellt und nie automatisch ersetzt
   (siehe Editor-Modus).
 
-## Freundesliste und Duell-Modus
+## Freundesliste
 
-Vorgemerkt am 02.08.2026, als Nächstes dran. Beides setzt Konten voraus (siehe oben) und ist
-der Grund, warum das Backend ein eigener Prozess ist und nicht in Next-Routen liegt.
+Vorgemerkt am 02.08.2026. Setzt Konten voraus (siehe oben) und ist der Grund, warum das
+Backend ein eigener Prozess ist und nicht in Next-Routen liegt. Der Multiplayer-Teil steht
+weiter unten in einem eigenen Abschnitt.
 
 **Freundesliste**
 
@@ -513,16 +514,83 @@ die dasselbe halbgut können, wären der schlechtere Weg. Nachfragen wäre auße
   einer Minute. Als "immer online" fühlt sich das nicht an; irgendwann ist das ein bezahlter
   Dienst.
 
-**Duell-Modus**
+## Multiplayer
 
-- Zwei Leute singen denselben Song, am Ende gewinnt die höhere Punktzahl
-- Erste Frage ist nicht die Technik, sondern **woher beide denselben Song haben**: Die Musik
-  liegt lokal, geteilt wird höchstens der Chart. Naheliegend: Duell nur, wenn beide Seiten
-  dieselbe Datei besitzen (Abgleich über den Datei-Hash) — sonst gibt es nichts zu vergleichen
-- Zweite Frage: gleichzeitig oder nacheinander. Nacheinander ist deutlich einfacher (keine
-  laufende Verbindung nötig, nur ein Ergebnis hin und her) und wäre der bessere erste Schritt
-- Gleichzeitig braucht dann socket.io oder Colyseus neben Express, plus Lobby, Bereitschaft
-  und einen gemeinsamen Start
+Besprochen am 03.08.2026. Multiplayer ist ein **Kernstück** des Spiels, nicht ein Anhängsel —
+Singleplayer bleibt gleichrangig daneben.
+
+**Nur einer muss den Song haben.** Das ist die Vorgabe, an der sich alles ausrichtet: Wer den
+Song besitzt, ist Gastgeber der Runde und überträgt den Ton an die anderen. Die frühere Idee,
+ein Duell nur bei übereinstimmendem Datei-Hash zuzulassen, ist damit vom Tisch.
+
+### Aufteilung: Steuerung über den Server, Ton direkt
+
+So machen es Discord, Teams und alle Konferenzdienste — und es ist die Antwort auf die Frage
+"funktioniert das bei allen?":
+
+- **Über unseren Server:** Lobby, Chat, Bereitschaft, Songwahl, Punktestände. Läuft über die
+  bestehende socket.io-Verbindung, also normales HTTPS/WebSocket. Funktioniert in **jedem**
+  Netz und kostet ein paar Bytes je Sekunde
+- **Direkt zwischen den Browsern (WebRTC):** nur der Ton. Der Gastgeber greift ihn aus dem
+  Web-Audio-Graphen ab (`MediaStreamDestination`) und schickt ihn als Tonspur weiter
+- Jede Seite wertet gegen **ihre eigene** Wiedergabeposition. Die 100–300 ms Verzögerung von
+  WebRTC verschieben die Runde, verfälschen aber kein Ergebnis
+
+### Idee: Relais (TURN) als Rückfall
+
+**Zurückgestellt, aber eingeplant.** Direkte Verbindungen kommen in etwa 80–90 % der Fälle
+zustande; STUN (öffentlich, kostenlos) reicht dafür. Der Rest sitzt in Netzen, die keine
+direkte Verbindung zulassen — strenge Firmennetze, manche Mobilfunknetze. Dann braucht es ein
+Relais, das die Pakete durchreicht.
+
+- **Im Code drei Zeilen:** ein weiterer Eintrag unter `iceServers` mit Zugangsdaten. Der
+  Browser probiert von selbst zuerst direkt und nimmt das Relais nur, wenn es nicht anders geht
+- **Der Aufwand liegt im Betreiben:** entweder ein fertiger Anbieter (Abrechnung nach
+  durchgeleiteten Gigabyte, mehrere mit kostenlosem Kontingent) oder `coturn` auf einem
+  kleinen Server für rund 5–6 € im Monat
+- **Datenmenge:** rund 1 MB je Minute Übertragung. Bei 15 % Relaisanteil kosten 100 Duelle à
+  vier Minuten etwa 60 MB — jedes kostenlose Kontingent trägt das
+- **Wann:** Erst bauen ohne, dann messen, wie oft Verbindungen scheitern. Kommt später dazu,
+  ohne Umbauten
+
+### Verworfen: Host als Spielleiter (StarCraft-Modell)
+
+Ein Browser kann **keine eingehenden Verbindungen annehmen** — das alte Modell mit Portfreigabe
+im Router lässt sich nicht nachbauen. Der einzige Weg zu direkten Verbindungen ist WebRTC, und
+das braucht zwingend einen Vermittlungsserver. Man wird den Server also nicht los, sondern
+verlagert nur, was über ihn läuft. Dazu: Genau die Netze, in denen WebRTC scheitert, würden
+dann **gar nichts** mehr können statt nur den Ton zu verlieren. Weitere Gründe: Verlässt der
+Gastgeber, ist die Runde tot; er kontrolliert die Wertung und könnte mogeln; und die
+Fehlersuche findet auf fremden Rechnern statt.
+
+### Lobby — als Erstes dran
+
+- **Eigener Pfad `/lobby/[code]`**, nicht als Überlagerung wie der Spielbildschirm. Der
+  Unterschied: Der Lobby-Zustand liegt auf dem **Server**, ein Neuladen kann also dorthin
+  zurückführen. Beim Spielbildschirm hängt alles an lokalen Dingen (Ordner, Mikrofon, Audio),
+  die ohnehin neu erfragt werden müssten
+- **Code aus sechs Zeichen**, Großbuchstaben und Ziffern ohne `I`, `O`, `0`, `1` — verwechselt
+  man beim Abtippen. Gleichzeitig der Raumcode zum Vorlesen und später der Beitrittslink
+- **`/lobby` ohne Code** leitet in die laufende Lobby weiter, sonst zur Startseite
+
+- [ ] **M1. Einladen und Lobby betreten** — Einladung aus der Freundesliste. Solange sie offen
+      ist, bleibt **Spielen für den Einladenden gesperrt**. Nimmt der andere an, landen beide
+      in der Lobby. Mehr nicht.
+- [ ] **M2. Lobby-Chat** — über dieselbe Socket-Verbindung, wenig Aufwand.
+- [ ] **M3. Songwahl in der Lobby** — wer den Song hat, wird Gastgeber der Runde.
+- [ ] **M4. Tonübertragung per WebRTC** — Gastgeber überträgt, die anderen singen mit.
+- [ ] **M5. Gemeinsamer Start und Punktestände** — Startzeitpunkt vom Server, danach laufender
+      Abgleich der Punkte über die Socket-Verbindung.
+
+**Zustand der Lobby:** im Arbeitsspeicher des Servers, wie die Anwesenheit — Lobbys sind
+kurzlebig, und wenn der Dienst einschläft, sind ohnehin alle Verbindungen weg. Der Zugriff
+gehört hinter ein kleines Modul ("hol Lobby", "speichere Lobby", "schick an alle in Lobby"),
+damit ein späterer Wechsel auf Redis eine Datei bleibt.
+
+**Wann Redis nötig wird:** nicht wegen der Nutzerzahl — ein Node-Prozess trägt Tausende
+Verbindungen, eine offene Verbindung kostet 10–40 KB. Sondern sobald ein **zweiter Prozess**
+dazukommt (Ausfallsicherheit, Bereitstellung ohne Unterbrechung). Bis dahin ist der Gratisdienst
+auf Render die engere Grenze.
 
 ## Spielmodi
 

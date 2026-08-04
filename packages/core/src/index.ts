@@ -30,6 +30,15 @@ export {
 export type { FriendEntry, FriendList, FriendStatus, PlayerSearchResult } from "./friends";
 
 export type { PlayerProfile, PublicPlayer } from "./profile";
+
+export type {
+  ClientEvents,
+  FriendEvent,
+  PresenceChanged,
+  PresenceSnapshot,
+  ServerEvents,
+} from "./realtime";
+export { REALTIME_EVENTS, userRoom } from "./realtime";
 export {
   PLAYER_NAME_MAX,
   PLAYER_NAME_MIN,

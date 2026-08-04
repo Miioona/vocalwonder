@@ -1,6 +1,9 @@
+import { createServer } from "node:http";
+
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
-import { connectToDatabase, disconnectFromDatabase } from "./db/connect.js";
+import { connectToDatabase, disconnectFromDatabase, isConnected } from "./db/connect.js";
+import { attachRealtime } from "./realtime/realtime.js";
 
 async function main(): Promise<void> {
   if (env.MONGODB_URI) {
@@ -10,7 +13,13 @@ async function main(): Promise<void> {
   }
 
   const app = createApp();
-  const server = app.listen(env.PORT, () => {
+
+  // Eigener HTTP-Server statt `app.listen`: socket.io hängt sich daran, Express bleibt der
+  // Anfragen-Handler. Ohne Datenbank gibt es keine Sitzungen — dann auch keine Verbindungen.
+  const server = createServer(app);
+  if (isConnected()) attachRealtime(server);
+
+  server.listen(env.PORT, () => {
     console.log(`[server] listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
   });
 

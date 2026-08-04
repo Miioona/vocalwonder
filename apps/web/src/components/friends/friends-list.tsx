@@ -10,6 +10,7 @@ import { useSession } from "@/lib/auth/auth-client";
 import { useFriendActions, useFriends, usePlayerSearch } from "@/lib/friends/use-friends";
 import { useMyProfile } from "@/lib/profile/use-profile";
 import { useDebounced } from "@/lib/use-debounced";
+import { useRealtimeStore } from "@/stores/useRealtimeStore";
 
 /**
  * Freunde suchen, Anfragen beantworten, Liste sehen. Sitzt in der Leiste rechts.
@@ -126,42 +127,59 @@ interface PlayerRowProps {
   onRemove?: () => void;
 }
 
-/** Eine Zeile für alle Fälle — welche Knöpfe erscheinen, entscheidet der Status. */
-const PlayerRow = ({ player, busy, onAdd, onAccept, onRemove }: PlayerRowProps) => (
-  <div className="flex items-center gap-3 border-b border-border py-2 last:border-0">
-    {player.image ? (
-      // Kein next/image: Die Bilder liegen bei Google und Discord.
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={player.image} alt="" className="size-8 shrink-0 rounded-full object-cover" />
-    ) : (
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs">
-        {player.playerName.slice(0, 1).toUpperCase()}
+/**
+ * Eine Zeile für alle Fälle — welche Knöpfe erscheinen, entscheidet der Status.
+ *
+ * Der grüne Punkt kommt aus der offenen Verbindung, nicht aus der Liste: Die Liste sagt, wer
+ * meine Freunde sind, die Verbindung sagt, wer davon gerade da ist.
+ */
+const PlayerRow = ({ player, busy, onAdd, onAccept, onRemove }: PlayerRowProps) => {
+  const online = useRealtimeStore((state) => state.online.includes(player.userId));
+
+  return (
+    <div className="flex items-center gap-3 border-b border-border py-2 last:border-0">
+      {player.image ? (
+        // Kein next/image: Die Bilder liegen bei Google und Discord.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={player.image} alt="" className="size-8 shrink-0 rounded-full object-cover" />
+      ) : (
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs">
+          {player.playerName.slice(0, 1).toUpperCase()}
+        </span>
+      )}
+
+      <span className="min-w-0 flex-1 truncate text-sm">
+        {player.playerName}
+        {online && (
+          <span
+            aria-label="online"
+            className="ml-2 inline-block size-2 rounded-full bg-emerald-500 align-middle"
+          />
+        )}
       </span>
-    )}
 
-    <span className="min-w-0 flex-1 truncate text-sm">{player.playerName}</span>
+      <span className="flex shrink-0 gap-1">
+        {player.status === "none" && onAdd && (
+          <Button size="sm" disabled={busy} onClick={onAdd}>
+            Hinzufügen
+          </Button>
+        )}
 
-    <span className="flex shrink-0 gap-1">
-      {player.status === "none" && onAdd && (
-        <Button size="sm" disabled={busy} onClick={onAdd}>
-          Hinzufügen
-        </Button>
-      )}
+        {player.status === "incoming" && onAccept && (
+          <Button size="sm" disabled={busy} onClick={onAccept}>
+            Annehmen
+          </Button>
+        )}
 
-      {player.status === "incoming" && onAccept && (
-        <Button size="sm" disabled={busy} onClick={onAccept}>
-          Annehmen
-        </Button>
-      )}
-
-      {onRemove && (
-        <Button size="sm" variant="ghost" disabled={busy} onClick={onRemove}>
-          {removeLabel(player.status)}
-        </Button>
-      )}
-    </span>
-  </div>
-);
+        {onRemove && (
+          <Button size="sm" variant="ghost" disabled={busy} onClick={onRemove}>
+            {removeLabel(player.status)}
+          </Button>
+        )}
+      </span>
+    </div>
+  );
+};
 
 function removeLabel(status: FriendStatus): string {
   if (status === "incoming") return "Ablehnen";
