@@ -21,6 +21,15 @@ const profileSchema = new Schema(
      * Der Eindeutigkeitsindex trägt nebenbei die Präfixsuche ("fab" findet "Fabian").
      */
     playerNameLower: { type: String, required: true, unique: true },
+
+    /**
+     * Zuletzt verbunden gewesen. Gesetzt, wenn die letzte offene Verbindung geht.
+     *
+     * Nicht für "ist online" — das sagt die Verbindung selbst. Sondern für "zuletzt gesehen
+     * vor zwei Stunden" bei allen, die gerade nicht da sind, und damit nach einem Neustart
+     * des Servers nicht alle als nie gesehen dastehen.
+     */
+    lastSeenAt: { type: Date },
   },
   { timestamps: true },
 );

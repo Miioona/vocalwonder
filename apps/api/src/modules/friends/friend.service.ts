@@ -1,4 +1,10 @@
-import type { FriendEntry, FriendList, FriendStatus, PlayerSearchResult } from "@vocalwonder/core";
+import type {
+  FriendEntry,
+  FriendList,
+  FriendStatus,
+  PlayerSearchResult,
+  PublicPlayer,
+} from "@vocalwonder/core";
 import { normalizePlayerName } from "@vocalwonder/core";
 
 import { ProfileModel } from "../profile/profile.model.js";
@@ -94,6 +100,23 @@ export async function getFriendList(meId: string): Promise<FriendList> {
 
   list.friends.sort((a, b) => a.playerName.localeCompare(b.playerName, "de"));
   return list;
+}
+
+/** Ein einzelner Spieler, wie ihn andere sehen — für die Ereignisse über die Verbindung. */
+export async function getPublicPlayer(userId: string): Promise<PublicPlayer | undefined> {
+  const players = await loadPlayers([userId]);
+  const player = players.get(userId);
+  return player ? { userId, playerName: player.playerName, image: player.image } : undefined;
+}
+
+/** Wer mit mir befreundet ist — nur angenommene. Für die Anwesenheit über die Verbindung. */
+export async function getFriendIds(meId: string): Promise<string[]> {
+  const docs = await FriendshipModel.find({
+    status: "accepted",
+    $or: [{ requesterId: meId }, { addresseeId: meId }],
+  }).lean();
+
+  return docs.map((doc) => (doc.requesterId === meId ? doc.addresseeId : doc.requesterId));
 }
 
 /**
