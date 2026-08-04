@@ -1,4 +1,4 @@
-import type { FriendEvent } from "@vocalwonder/core";
+import type { Activity, FriendEvent, PresenceEntry } from "@vocalwonder/core";
 import { create } from "zustand";
 
 export type ConnectionStatus = "offline" | "connecting" | "online";
@@ -11,14 +11,14 @@ export interface QueuedEvent {
 
 interface RealtimeState {
   status: ConnectionStatus;
-  /** Nutzer-IDs der Freunde, die gerade verbunden sind. */
-  online: string[];
+  /** Freunde, die gerade verbunden sind — mit dem, was sie tun. */
+  online: PresenceEntry[];
   /** Ereignisse, die während des Singens eingetroffen sind. */
   queued: QueuedEvent[];
 
   setStatus: (status: ConnectionStatus) => void;
-  setOnline: (online: string[]) => void;
-  setPresence: (userId: string, online: boolean) => void;
+  setOnline: (online: PresenceEntry[]) => void;
+  setPresence: (userId: string, online: boolean, activity?: Activity) => void;
   queue: (item: QueuedEvent) => void;
   drain: () => QueuedEvent[];
   reset: () => void;
@@ -39,14 +39,11 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
   setStatus: (status) => set({ status }),
   setOnline: (online) => set({ online }),
 
-  setPresence: (userId, online) =>
-    set((state) => ({
-      online: online
-        ? state.online.includes(userId)
-          ? state.online
-          : [...state.online, userId]
-        : state.online.filter((id) => id !== userId),
-    })),
+  setPresence: (userId, online, activity = "browsing") =>
+    set((state) => {
+      const without = state.online.filter((entry) => entry.userId !== userId);
+      return { online: online ? [...without, { userId, activity }] : without };
+    }),
 
   queue: (item) => set((state) => ({ queued: [...state.queued, item] })),
 

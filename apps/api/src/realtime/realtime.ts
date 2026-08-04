@@ -9,7 +9,14 @@ import { env } from "../config/env.js";
 import { getAuth } from "../modules/auth/auth.js";
 import { getFriendIds } from "../modules/friends/friend.service.js";
 import { touchLastSeen } from "../modules/profile/profile.service.js";
-import { addConnection, onlineAmong, removeConnection } from "./presence.js";
+import { registerLobbyHandlers, scheduleLobbyCleanup, sendCurrentLobby } from "./lobby-handlers.js";
+import {
+  activityOf,
+  addConnection,
+  onlineAmong,
+  removeConnection,
+  setReportedActivity,
+} from "./presence.js";
 
 /**
  * Die offene Verbindung zum Browser.
@@ -50,6 +57,11 @@ export function attachRealtime(server: HttpServer): void {
   io.on("connection", (socket) => {
     const userId = socket.data.userId as string;
 
+    // **Vor** allem Warten auf die Datenbank: Der Browser meldet seine Tätigkeit sofort nach
+    // dem Verbinden. Wäre die Verbindung dann noch nicht eingetragen, ginge die Meldung
+    // verloren — und der Betreffende stünde bei allen als "im Menü" da.
+    const isFirst = addConnection(userId);
+
     void (async () => {
       await socket.join(userRoom(userId));
 
@@ -57,11 +69,24 @@ export function attachRealtime(server: HttpServer): void {
 
       // Erst der eigene Stand, dann die anderen benachrichtigen.
       socket.emit(REALTIME_EVENTS.presenceSnapshot, { online: onlineAmong(friendIds) });
+      await sendCurrentLobby(socket, userId);
 
-      if (addConnection(userId)) {
-        announce(friendIds, { userId, online: true });
+      if (isFirst) {
+        announce(friendIds, { userId, online: true, activity: activityOf(userId) });
       }
     })().catch((err: unknown) => console.error("[realtime] Verbindungsaufbau", err));
+
+    registerLobbyHandlers(io as Server<ClientEvents, ServerEvents>, socket, userId);
+
+    // Was der Browser meldet: "im Menü" oder "singt". Alles Weitere weiß der Server selbst.
+    socket.on(REALTIME_EVENTS.activity, (activity) => {
+      // Nur weitersagen, wenn sich wirklich etwas ändert — der Browser meldet auch mal
+      // dasselbe zweimal, etwa beim Wiederverbinden.
+      if (activityOf(userId) === activity) return;
+
+      setReportedActivity(userId, activity);
+      void announceActivity(userId);
+    });
 
     socket.on("disconnect", () => {
       void (async () => {
@@ -72,11 +97,25 @@ export function attachRealtime(server: HttpServer): void {
 
         const friendIds = await getFriendIds(userId);
         announce(friendIds, { userId, online: false, lastSeenAt: lastSeenAt.toISOString() });
+
+        // Nicht sofort aus der Lobby werfen — ein Neuladen sieht genauso aus wie ein Weggehen.
+        if (io) scheduleLobbyCleanup(io, userId);
       })().catch((err: unknown) => console.error("[realtime] Verbindungsabbau", err));
     });
   });
 
   console.log("[realtime] socket.io bereit");
+}
+
+/**
+ * Die Tätigkeit eines Nutzers an seine Freunde melden.
+ *
+ * Wird auch aus der Lobby heraus aufgerufen: Wer beitritt oder geht, ändert damit, was seine
+ * Freunde über ihn sehen — und ob eine Einladung an ihn gerade sinnvoll wäre.
+ */
+export async function announceActivity(userId: string): Promise<void> {
+  const friendIds = await getFriendIds(userId);
+  announce(friendIds, { userId, online: true, activity: activityOf(userId) });
 }
 
 /** Anwesenheit an alle Freunde melden — jeder in seinem eigenen Raum. */

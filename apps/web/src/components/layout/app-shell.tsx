@@ -5,6 +5,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { FriendsSidebar } from "@/components/friends/friends-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { MainMenu } from "@/components/layout/main-menu";
+import { LobbyInvites } from "@/components/lobby/lobby-invites";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
 /**
@@ -35,6 +36,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
 
       <MainMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <FriendsSidebar />
+      <LobbyInvites />
     </SidebarProvider>
   );
 };

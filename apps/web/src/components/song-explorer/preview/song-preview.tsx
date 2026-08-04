@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useAnalysisStore } from "@/stores/useAnalysisStore";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { useLobbyStore } from "@/stores/useLobbyStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { SongDetails } from "./song-details";
 
@@ -13,6 +14,8 @@ export const SongPreview = () => {
   const analyse = useAnalysisStore((state) => state.analyse);
   const runningPath = useAnalysisStore((state) => state.runningPath);
   const progress = useAnalysisStore((state) => state.progress);
+
+  const inLobby = useLobbyStore((state) => state.lobby !== null);
 
   const running = Boolean(file) && runningPath === file?.path;
   const percent = progress?.ratio === undefined ? undefined : Math.round(progress.ratio * 100);
@@ -43,7 +46,13 @@ export const SongPreview = () => {
               : `analysiert … ${percent} %`
             : "Song analysieren"}
         </Button>{" "}
-        <Button disabled={!file} onClick={() => file && startPlaying(file)} className="shrink-0">
+        {/* In einer Lobby wird nicht allein gesungen — dort wird der Song gemeinsam gewählt. */}
+        <Button
+          disabled={!file || inLobby}
+          title={inLobby ? "Du bist in einer Lobby" : undefined}
+          onClick={() => file && startPlaying(file)}
+          className="shrink-0"
+        >
           ▶ Spielen
         </Button>
       </div>

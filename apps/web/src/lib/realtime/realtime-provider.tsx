@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
-import { REALTIME_EVENTS, type FriendEvent } from "@vocalwonder/core";
+import { LOBBY_EVENTS, REALTIME_EVENTS, type Activity, type FriendEvent } from "@vocalwonder/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { io, type Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import { toast } from "sonner";
 
 import { useSession } from "@/lib/auth/auth-client";
 import { CONFIG } from "@/lib/config/config";
 import { QUERY_KEYS } from "@/lib/query-keys";
+import { setSocket, type AppSocket } from "@/lib/realtime/socket";
+import { useLobbyStore } from "@/stores/useLobbyStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useRealtimeStore, type QueuedEvent } from "@/stores/useRealtimeStore";
 
@@ -24,6 +27,8 @@ export const RealtimeProvider = ({ children }: { children: React.ReactNode }) =>
   const { data: session } = useSession();
   const userId = session?.user.id;
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+  const reportRef = useRef<(() => void) | undefined>(undefined);
 
   useEffect(() => {
     if (!userId) {
@@ -34,7 +39,7 @@ export const RealtimeProvider = ({ children }: { children: React.ReactNode }) =>
     const store = useRealtimeStore.getState();
     store.setStatus("connecting");
 
-    const socket: Socket = io(CONFIG.API.BASE_URL, {
+    const socket: AppSocket = io(CONFIG.API.BASE_URL, {
       // Schickt das Sitzungs-Cookie beim Handschlag mit — dieselbe Anmeldung wie bei REST.
       withCredentials: true,
       // Der Gratisdienst schläft nach 15 Minuten ein; der erste Versuch am Tag darf dauern.
@@ -54,8 +59,8 @@ export const RealtimeProvider = ({ children }: { children: React.ReactNode }) =>
       useRealtimeStore.getState().setOnline(online);
     });
 
-    socket.on(REALTIME_EVENTS.presenceChanged, ({ userId: friendId, online }) => {
-      useRealtimeStore.getState().setPresence(friendId, online);
+    socket.on(REALTIME_EVENTS.presenceChanged, ({ userId: friendId, online, activity }) => {
+      useRealtimeStore.getState().setPresence(friendId, online, activity);
     });
 
     const onFriendEvent = (kind: QueuedEvent["kind"]) => (event: FriendEvent) => {
@@ -74,11 +79,43 @@ export const RealtimeProvider = ({ children }: { children: React.ReactNode }) =>
     socket.on(REALTIME_EVENTS.friendRequest, onFriendEvent("request"));
     socket.on(REALTIME_EVENTS.friendAccepted, onFriendEvent("accepted"));
 
+    // Der Server ist die einzige Wahrheit über die Lobby — hier wird nur übernommen.
+    socket.on(LOBBY_EVENTS.state, (lobby) => useLobbyStore.getState().setLobby(lobby));
+    socket.on(LOBBY_EVENTS.invite, (invite) => useLobbyStore.getState().addInvite(invite));
+
+    socket.on(LOBBY_EVENTS.declined, ({ player }) => {
+      toast(`${player.playerName} hat abgelehnt`);
+    });
+
+    socket.on(LOBBY_EVENTS.messages, (messages) => useLobbyStore.getState().setMessages(messages));
+    socket.on(LOBBY_EVENTS.message, (message) => useLobbyStore.getState().addMessage(message));
+
+    // Was der Server nicht sehen kann: ob hier gerade gesungen wird. Beim Verbinden einmal,
+    // danach bei jedem Wechsel.
+    const reportActivity = () => {
+      socket.emit(REALTIME_EVENTS.activity, currentActivity());
+    };
+
+    socket.on("connect", reportActivity);
+    const stopWatching = usePlayerStore.subscribe(reportActivity);
+    reportRef.current = reportActivity;
+
+    setSocket(socket);
+
     return () => {
+      reportRef.current = undefined;
+      stopWatching();
+      setSocket(undefined);
       socket.close();
       useRealtimeStore.getState().reset();
+      useLobbyStore.getState().reset();
     };
   }, [userId, queryClient]);
+
+  // Ein Seitenwechsel ändert die Tätigkeit — die Songübersicht ist etwas anderes als das Menü.
+  useEffect(() => {
+    reportRef.current?.();
+  }, [pathname]);
 
   // Nach dem Singen nachholen, was liegen geblieben ist.
   useEffect(
@@ -92,6 +129,17 @@ export const RealtimeProvider = ({ children }: { children: React.ReactNode }) =>
 
   return <>{children}</>;
 };
+
+/**
+ * Was der Server nicht selbst sehen kann.
+ *
+ * Die Lobby lässt er ausdrücklich weg — die kennt er besser als wir, und seine Angabe hat
+ * Vorrang.
+ */
+function currentActivity(): Activity {
+  if (usePlayerStore.getState().mode === "play") return "singing";
+  return window.location.pathname.startsWith("/songs") ? "library" : "browsing";
+}
 
 function showEvent({ kind, event }: QueuedEvent) {
   const name = event.player.playerName;

@@ -497,6 +497,22 @@ tasten und herausfinden, wer hier ein Konto hat.
       bereits (A4), es fehlt die Auswahl und die Ansicht.
 - [ ] **F5. Kleinigkeiten, wenn es benutzt wird** — Blockieren, Begrenzung der Anfragen pro
       Stunde. Die Anzahl offener Anfragen steht bereits am Symbol in der Kopfzeile.
+- [ ] **F6. Doppelung aufräumen** — "so sieht ein Spieler für andere aus" (Name aus `profile`,
+      Bild aus `user`) steht zweimal: als private `loadPlayers` in `friend.service.ts` und als
+      `getPublicPlayers` in `profile.service.ts`. Die zweite ist die richtige Stelle; die
+      Freundesliste soll sie aufrufen und ihre eigene löschen. Zehn Minuten.
+
+### Idee: Avatar gehört ins Profil, nicht zum Anmeldedienst
+
+Heute kommt das Bild aus better-auths `user`-Sammlung — die Adresse des Profilbilds bei Google
+oder Discord, gesetzt beim Anmelden. Das reicht vorerst, hat aber zwei Haken:
+
+- **Die Adressen sind nicht dauerhaft.** Ändert jemand sein Bild beim Anbieter, zeigt unsere
+  gespeicherte Adresse ins Leere, bis er sich das nächste Mal anmeldet
+- **Eigene Avatare** — bei GeoGuessr ein Teil des Reizes — gehören uns, nicht dem Anmeldedienst
+
+Sobald das Thema wird: `avatarUrl` (oder eine Spielfigur) in unsere `profile`-Sammlung, das
+Anbieterbild wird zur Voreinstellung beim ersten Anmelden. Bis dahin bleibt es, wie es ist.
 
 **Sockets statt Nachfragen — entschieden am 02.08.2026.** Anwesenheit wird nicht durch
 regelmäßiges Nachfragen ermittelt, sondern über eine offene Verbindung. Begründung: Für Duelle

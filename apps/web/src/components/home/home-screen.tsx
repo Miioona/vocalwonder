@@ -10,6 +10,7 @@ import { useSession } from "@/lib/auth/auth-client";
 import { stripExtension } from "@/lib/song-explorer/audio-files";
 import { useSongMetadata } from "@/lib/song-explorer/use-song-metadata";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { useLobbyStore } from "@/stores/useLobbyStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 
 /**
@@ -27,6 +28,7 @@ export const HomeScreen = () => {
   const files = useExplorerStore((state) => state.files);
   const selectedFile = useExplorerStore((state) => state.selectedFile);
   const start = usePlayerStore((state) => state.start);
+  const lobby = useLobbyStore((state) => state.lobby);
 
   const { metadata } = useSongMetadata(selectedFile);
   const title = metadata?.title ?? (selectedFile ? stripExtension(selectedFile.name) : undefined);
@@ -77,9 +79,16 @@ export const HomeScreen = () => {
             </p>
           </div>
 
-          <Button size="lg" className="px-10 text-base" onClick={sing}>
-            {selectedFile ? "Singen" : "Bibliothek öffnen"}
-          </Button>
+          {/* In einer Lobby wird nicht allein gesungen — dort geht es zur Lobby zurück. */}
+          {lobby ? (
+            <Button size="lg" className="px-10 text-base" onClick={() => router.push("/lobby")}>
+              Zur Lobby
+            </Button>
+          ) : (
+            <Button size="lg" className="px-10 text-base" onClick={sing}>
+              {selectedFile ? "Singen" : "Bibliothek öffnen"}
+            </Button>
+          )}
         </div>
 
         <GameCard framed title="Zuletzt gesungen">
