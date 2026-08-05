@@ -29,12 +29,23 @@ export {
 
 export type { FriendEntry, FriendList, FriendStatus, PlayerSearchResult } from "./friends";
 
+export type { LobbyAck, LobbyInvite, LobbyMessage, LobbyState } from "./lobby";
+export {
+  LOBBY_CODE_ALPHABET,
+  LOBBY_CODE_LENGTH,
+  LOBBY_EVENTS,
+  LOBBY_HISTORY,
+  LOBBY_MESSAGE_MAX,
+} from "./lobby";
+
 export type { PlayerProfile, PublicPlayer } from "./profile";
 
 export type {
+  Activity,
   ClientEvents,
   FriendEvent,
   PresenceChanged,
+  PresenceEntry,
   PresenceSnapshot,
   ServerEvents,
 } from "./realtime";

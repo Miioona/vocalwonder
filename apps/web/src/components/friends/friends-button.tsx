@@ -23,7 +23,7 @@ export const FriendsButton = () => {
   // Wie viele Freunde gerade da sind — aus der offenen Verbindung.
   const friendIds = list?.friends.map((friend) => friend.userId) ?? [];
   const onlineCount = useRealtimeStore(
-    (state) => state.online.filter((id) => friendIds.includes(id)).length,
+    (state) => state.online.filter((entry) => friendIds.includes(entry.userId)).length,
   );
 
   return (

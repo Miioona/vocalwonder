@@ -2,14 +2,24 @@
 
 import { useState } from "react";
 
-import type { FriendEntry, FriendStatus, PlayerSearchResult } from "@vocalwonder/core";
+import type { Activity, FriendEntry, FriendStatus, PlayerSearchResult } from "@vocalwonder/core";
+
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useSession } from "@/lib/auth/auth-client";
 import { useFriendActions, useFriends, usePlayerSearch } from "@/lib/friends/use-friends";
 import { useMyProfile } from "@/lib/profile/use-profile";
 import { useDebounced } from "@/lib/use-debounced";
+import { lobbyCommands } from "@/lib/realtime/socket";
+import { useLobbyStore } from "@/stores/useLobbyStore";
 import { useRealtimeStore } from "@/stores/useRealtimeStore";
 
 /**
@@ -27,6 +37,7 @@ export const FriendsList = () => {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounced(query);
   const { data: results, isFetching } = usePlayerSearch(debouncedQuery);
+  const lobby = useLobbyStore((state) => state.lobby);
 
   if (!session) {
     return <p className="text-sm text-muted-foreground">Melde dich an, um Freunde zu finden.</p>;
@@ -40,7 +51,16 @@ export const FriendsList = () => {
     );
   }
 
+  // Wer Gast in einer fremden Lobby ist, lädt niemanden ein — das darf nur der Gastgeber.
+  const hostable = !lobby || lobby.hostId === session.user.id;
+
   const searching = debouncedQuery.trim().length >= 2;
+
+  // Der Grund einer Absage kommt vom Server — "gerade nicht da", "sitzt schon in einer Lobby".
+  const invite = async (userId: string) => {
+    const result = await lobbyCommands.invite(userId);
+    if (!result.ok) toast(result.message ?? "Einladung nicht möglich");
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -109,6 +129,8 @@ export const FriendsList = () => {
                 key={entry.userId}
                 player={entry}
                 busy={remove.isPending}
+                hostable={hostable}
+                onInvite={() => void invite(entry.userId)}
                 onRemove={() => remove.mutate(entry.userId)}
               />
             ))
@@ -122,8 +144,11 @@ export const FriendsList = () => {
 interface PlayerRowProps {
   player: PlayerSearchResult | FriendEntry;
   busy: boolean;
+  /** Ob ich gerade überhaupt jemanden einladen darf — als Gast einer fremden Lobby nicht. */
+  hostable?: boolean;
   onAdd?: () => void;
   onAccept?: () => void;
+  onInvite?: () => void;
   onRemove?: () => void;
 }
 
@@ -133,8 +158,22 @@ interface PlayerRowProps {
  * Der grüne Punkt kommt aus der offenen Verbindung, nicht aus der Liste: Die Liste sagt, wer
  * meine Freunde sind, die Verbindung sagt, wer davon gerade da ist.
  */
-const PlayerRow = ({ player, busy, onAdd, onAccept, onRemove }: PlayerRowProps) => {
-  const online = useRealtimeStore((state) => state.online.includes(player.userId));
+const PlayerRow = ({
+  player,
+  busy,
+  hostable = false,
+  onAdd,
+  onAccept,
+  onInvite,
+  onRemove,
+}: PlayerRowProps) => {
+  const entry = useRealtimeStore((state) =>
+    state.online.find((item) => item.userId === player.userId),
+  );
+  const online = Boolean(entry);
+
+  // Einladen nur, wenn es gerade passt: nicht mitten im Song, nicht in einer fremden Lobby.
+  const canInvite = (entry?.activity === "browsing" || entry?.activity === "library") && hostable;
 
   return (
     <div className="flex items-center gap-3 border-b border-border py-2 last:border-0">
@@ -148,13 +187,21 @@ const PlayerRow = ({ player, busy, onAdd, onAccept, onRemove }: PlayerRowProps) 
         </span>
       )}
 
-      <span className="min-w-0 flex-1 truncate text-sm">
-        {player.playerName}
-        {online && (
-          <span
-            aria-label="online"
-            className="ml-2 inline-block size-2 rounded-full bg-emerald-500 align-middle"
-          />
+      <span className="min-w-0 flex-1 truncate">
+        <span className="block truncate text-sm">
+          {player.playerName}
+          {online && (
+            <span
+              aria-label="online"
+              className="ml-2 inline-block size-2 rounded-full bg-emerald-500 align-middle"
+            />
+          )}
+        </span>
+
+        {entry && (
+          <span className="block truncate text-xs text-muted-foreground">
+            {activityText(entry.activity)}
+          </span>
         )}
       </span>
 
@@ -165,21 +212,89 @@ const PlayerRow = ({ player, busy, onAdd, onAccept, onRemove }: PlayerRowProps) 
           </Button>
         )}
 
+        {/* Kein Knopf, der immer eine Absage bringt: Wer singt oder schon in einer Lobby
+            sitzt, wird nicht gestört — und wer selbst Gast einer fremden Lobby ist, darf
+            ohnehin nicht einladen. */}
+        {canInvite && onInvite && (
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label="In die Lobby einladen"
+            title="In die Lobby einladen"
+            disabled={busy}
+            onClick={onInvite}
+          >
+            <InviteIcon />
+          </Button>
+        )}
+
         {player.status === "incoming" && onAccept && (
           <Button size="sm" disabled={busy} onClick={onAccept}>
             Annehmen
           </Button>
         )}
 
-        {onRemove && (
-          <Button size="sm" variant="ghost" disabled={busy} onClick={onRemove}>
-            {removeLabel(player.status)}
-          </Button>
-        )}
+        {/* Bei Freunden liegt alles Weitere im Menü — dort kommen später Verlauf und
+            Informationen dazu. Offene Anfragen bleiben ein sichtbarer Knopf: Sie wollen
+            beantwortet werden, nicht gesucht. */}
+        {onRemove &&
+          (player.status === "friends" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button size="icon-sm" variant="ghost" aria-label="Mehr" disabled={busy}>
+                    <MoreIcon />
+                  </Button>
+                }
+              />
+
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem variant="destructive" onClick={onRemove}>
+                  Entfernen
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button size="sm" variant="ghost" disabled={busy} onClick={onRemove}>
+              {removeLabel(player.status)}
+            </Button>
+          ))}
       </span>
     </div>
   );
 };
+
+/** Briefumschlag mit Pfeil — die übliche Geste für "Einladung raus". */
+const InviteIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    className="size-4"
+    aria-hidden
+  >
+    <path d="M21 8.5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h9" />
+    <path d="m3 7 9 6 4-2.7" />
+    <path d="M19 2v6M22 5h-6" />
+  </svg>
+);
+
+const MoreIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden>
+    <circle cx="5" cy="12" r="1.6" />
+    <circle cx="12" cy="12" r="1.6" />
+    <circle cx="19" cy="12" r="1.6" />
+  </svg>
+);
+
+/** Was jemand gerade tut — kurz gehalten, es steht unter dem Namen. */
+function activityText(activity: Activity): string {
+  if (activity === "singing") return "singt gerade";
+  if (activity === "lobby") return "in einer Lobby";
+  if (activity === "library") return "in der Songübersicht";
+  return "im Menü";
+}
 
 function removeLabel(status: FriendStatus): string {
   if (status === "incoming") return "Ablehnen";
