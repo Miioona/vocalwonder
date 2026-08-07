@@ -15,6 +15,15 @@ export class AudioEngine {
   private source?: AudioBufferSourceNode;
   /** Alles läuft hierdurch — ein Punkt für die Lautstärke, statt sie pro Quelle zu setzen. */
   private master?: GainNode;
+  /**
+   * Der Song vor der Lautstärkeregelung.
+   *
+   * Von hier gehen zwei Wege ab: über `master` zu den Lautsprechern dieses Rechners, und —
+   * im Mehrspieler — unverändert an die Mitspieler.
+   */
+  private tap?: GainNode;
+  /** Abgriff für die Übertragung an Mitspieler. Erst angelegt, wenn jemand ihn anfordert. */
+  private broadcast?: MediaStreamAudioDestinationNode;
   private volume = 0.8;
 
   /** Kontextzeit, zu der die aktuelle Wiedergabe begann. */
@@ -35,16 +44,49 @@ export class AudioEngine {
     };
   }
 
-  /** Muss aus einer Nutzerinteraktion heraus laufen, sonst bleibt der Kontext suspendiert. */
-  async load(blob: Blob): Promise<void> {
+  /**
+   * Den Audiokontext anlegen, ohne eine Datei zu laden.
+   *
+   * Für Mitspieler im Mehrspieler: Sie bekommen den Song als Strom und haben nichts zu
+   * dekodieren — brauchen aber trotzdem einen Kontext, an dem ihr Mikrofon hängen kann.
+   */
+  ensureContext(): AudioContext {
     const context = (this.context ??= new AudioContext());
 
     this.master ??= context.createGain();
     this.master.gain.value = this.volume;
     this.master.connect(context.destination);
 
+    this.tap ??= context.createGain();
+    this.tap.connect(this.master);
+
+    return context;
+  }
+
+  /** Muss aus einer Nutzerinteraktion heraus laufen, sonst bleibt der Kontext suspendiert. */
+  async load(blob: Blob): Promise<void> {
+    const context = this.ensureContext();
+
     const bytes = await blob.arrayBuffer();
     this.buffer = await context.decodeAudioData(bytes);
+  }
+
+  /**
+   * Derselbe Ton als Strom, zum Weiterreichen an Mitspieler.
+   *
+   * Greift **vor** der Lautstärkeregelung ab: Jeder soll für sich regeln können. Würde der
+   * Abgriff hinter dem Regler sitzen, hätten alle anderen die Lautstärke des Gastgebers.
+   *
+   * Das Mikrofon ist nicht dabei — es hängt an einem anderen Knoten und soll auch nicht mit
+   * übertragen werden.
+   */
+  broadcastStream(): MediaStream | undefined {
+    if (!this.context || !this.tap) return undefined;
+
+    this.broadcast ??= this.context.createMediaStreamDestination();
+    this.tap.connect(this.broadcast);
+
+    return this.broadcast.stream;
   }
 
   /** 0–1. Wirkt sofort, auch während der Song läuft. */
@@ -110,7 +152,7 @@ export class AudioEngine {
 
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(this.master ?? context.destination);
+    source.connect(this.tap ?? this.master ?? context.destination);
     source.onended = () => {
       if (this.stopping) return;
       this.playing = false;
@@ -166,8 +208,11 @@ export class AudioEngine {
   /** Beim Verlassen des Spielbildschirms — gibt den AudioContext frei. */
   dispose(): void {
     this.stop();
+    this.tap?.disconnect();
     this.master?.disconnect();
+    this.tap = undefined;
     this.master = undefined;
+    this.broadcast = undefined;
     this.buffer = undefined;
     void this.context?.close();
     this.context = undefined;

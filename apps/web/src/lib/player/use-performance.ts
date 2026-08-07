@@ -4,7 +4,7 @@ import { createScorer, type Chart, type ScoreSnapshot, type Scorer } from "@voca
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useSettingsStore } from "@/stores/useSettingsStore";
-import type { AudioEngine } from "./audio-engine";
+import type { Clock } from "@/components/player/pitch-canvas";
 import type { Microphone } from "./microphone";
 import type { PitchPoint } from "./renderer";
 
@@ -37,7 +37,7 @@ export interface Performance {
 }
 
 export const usePerformance = (
-  engine: AudioEngine,
+  clock: Clock,
   microphone: Microphone | undefined,
   chart: Chart | undefined,
   active: boolean,
@@ -62,7 +62,7 @@ export const usePerformance = (
 
     const timer = window.setInterval(() => {
       // Derselbe Ausgleich wie bei der Anzeige: Was jetzt ankommt, war früher gemeint.
-      const positionMs = engine.positionMs() - useSettingsStore.getState().latencyMs;
+      const positionMs = clock.positionMs() - useSettingsStore.getState().latencyMs;
 
       // Sprung zurück (Neustart, Spulen): alles Bisherige verwerfen.
       if (positionMs < lastPositionMs.current) {
@@ -104,7 +104,7 @@ export const usePerformance = (
     }, STEP_MS);
 
     return () => window.clearInterval(timer);
-  }, [engine, microphone, scorer, active]);
+  }, [clock, microphone, scorer, active]);
 
   return { performance, snapshot };
 };

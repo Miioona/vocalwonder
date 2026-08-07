@@ -14,6 +14,8 @@ const scoreInputSchema = z.object({
   totalNotes: z.number().int().min(0),
   durationMs: z.number().min(0),
   analysisVersion: z.number().int().min(0),
+  gameType: z.enum(["solo", "duel"]).default("solo"),
+  roundId: z.string().optional(),
 });
 
 export const postScore: RequestHandler = async (req, res, next) => {

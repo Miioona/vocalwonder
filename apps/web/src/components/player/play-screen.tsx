@@ -168,7 +168,7 @@ export const PlayScreen = ({ song }: { song: AudioFile }) => {
 
         <div className="relative min-h-0 flex-1">
           {/* Zeitraster, gesungene Linie und Playhead — die Sollbalken kommen obendrauf. */}
-          <PitchCanvas engine={engine} performance={performance} chart={chart} />
+          <PitchCanvas clock={engine} performance={performance} chart={chart} />
 
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {phase === "loading" && <p className="text-muted-foreground">Song wird geladen …</p>}

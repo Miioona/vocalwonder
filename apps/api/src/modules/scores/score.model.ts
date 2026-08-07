@@ -27,6 +27,11 @@ const scoreSchema = new Schema(
 
     /** Fassung der Analysekette, mit der der Chart entstanden ist. */
     analysisVersion: { type: Number, required: true },
+
+    /** Allein gesungen oder im Duell — getrennte Bestenlisten. */
+    gameType: { type: String, enum: ["solo", "duel"], default: "solo", index: true },
+    /** Klammert die Ergebnisse einer Lobby-Sitzung zusammen. */
+    roundId: { type: String, index: true },
   },
   { timestamps: true },
 );

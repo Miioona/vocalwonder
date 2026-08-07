@@ -29,7 +29,41 @@ export {
 
 export type { FriendEntry, FriendList, FriendStatus, PlayerSearchResult } from "./friends";
 
+export type {
+  LobbyAck,
+  LobbyInvite,
+  LobbyMessage,
+  LobbyPlayer,
+  LobbyScore,
+  LobbyState,
+  QueuedSong,
+  QueuedSongInput,
+  RoundResult,
+} from "./lobby";
+export {
+  LOBBY_COLORS,
+  LOBBY_CODE_ALPHABET,
+  LOBBY_CODE_LENGTH,
+  LOBBY_EVENTS,
+  LOBBY_HISTORY,
+  LOBBY_MESSAGE_MAX,
+} from "./lobby";
+
 export type { PlayerProfile, PublicPlayer } from "./profile";
+
+export type { RtcCandidate, RtcSignal, RtcSignalIn, RtcSignalOut } from "./rtc";
+export { ICE_SERVERS, RTC_EVENTS } from "./rtc";
+
+export type {
+  Activity,
+  ClientEvents,
+  FriendEvent,
+  PresenceChanged,
+  PresenceEntry,
+  PresenceSnapshot,
+  ServerEvents,
+} from "./realtime";
+export { REALTIME_EVENTS, userRoom } from "./realtime";
 export {
   PLAYER_NAME_MAX,
   PLAYER_NAME_MIN,
@@ -37,7 +71,7 @@ export {
   normalizePlayerName,
 } from "./profile";
 
-export type { SongScore, SongScoreInput } from "./scores";
+export type { GameType, SongScore, SongScoreInput } from "./scores";
 
 export type { NoteScore, ScoreSettings, ScoreSnapshot, Scorer } from "./scoring";
 export { DEFAULT_SCORE_SETTINGS, MAX_POINTS, createScorer } from "./scoring";

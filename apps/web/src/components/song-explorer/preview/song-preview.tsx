@@ -1,8 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
+import { addSongToLobby } from "@/lib/lobby/add-to-lobby";
 import { useAnalysisStore } from "@/stores/useAnalysisStore";
 import { useExplorerStore } from "@/stores/useExplorerStore";
+import { useLobbyStore } from "@/stores/useLobbyStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { SongDetails } from "./song-details";
 
@@ -14,8 +20,28 @@ export const SongPreview = () => {
   const runningPath = useAnalysisStore((state) => state.runningPath);
   const progress = useAnalysisStore((state) => state.progress);
 
+  const inLobby = useLobbyStore((state) => state.lobby !== null);
+  const locked = useLobbyStore((state) => state.lobby?.locked ?? false);
+  const [adding, setAdding] = useState(false);
+
   const running = Boolean(file) && runningPath === file?.path;
   const percent = progress?.ratio === undefined ? undefined : Math.round(progress.ratio * 100);
+
+  /** Das Hashen liest die ganze Datei — bei großen Dateien dauert das einen Moment. */
+  const add = async () => {
+    if (!file) return;
+
+    setAdding(true);
+    try {
+      const result = await addSongToLobby(file);
+      if (!result.ok) toast(result.message ?? "Ging nicht");
+    } catch (error) {
+      console.error("[lobby]", error);
+      toast("Song konnte nicht gelesen werden");
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <section className="flex items-center gap-4 border-b border-border px-4 py-3 md:px-6">
@@ -43,9 +69,21 @@ export const SongPreview = () => {
               : `analysiert … ${percent} %`
             : "Song analysieren"}
         </Button>{" "}
-        <Button disabled={!file} onClick={() => file && startPlaying(file)} className="shrink-0">
-          ▶ Spielen
-        </Button>
+        {/* In einer Lobby wird nicht allein gesungen — dort wandert der Song in die Liste.
+            Ausgesucht wird also weiterhin hier, wo die Bibliothek ohnehin steht. */}
+        {inLobby ? (
+          <Button
+            disabled={!file || adding || locked}
+            onClick={() => void add()}
+            className="shrink-0"
+          >
+            {locked ? "Liste steht fest" : "Zur Lobby hinzufügen"}
+          </Button>
+        ) : (
+          <Button disabled={!file} onClick={() => file && startPlaying(file)} className="shrink-0">
+            ▶ Spielen
+          </Button>
+        )}
       </div>
     </section>
   );

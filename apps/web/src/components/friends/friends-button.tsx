@@ -3,6 +3,7 @@
 import { useSidebar } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth/auth-client";
 import { useFriends } from "@/lib/friends/use-friends";
+import { useRealtimeStore } from "@/stores/useRealtimeStore";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,6 +20,12 @@ export const FriendsButton = () => {
 
   const waiting = list?.incoming.length ?? 0;
 
+  // Wie viele Freunde gerade da sind — aus der offenen Verbindung.
+  const friendIds = list?.friends.map((friend) => friend.userId) ?? [];
+  const onlineCount = useRealtimeStore(
+    (state) => state.online.filter((entry) => friendIds.includes(entry.userId)).length,
+  );
+
   return (
     <button
       type="button"
@@ -32,7 +39,18 @@ export const FriendsButton = () => {
         !session && "opacity-50",
       )}
     >
-      <FriendsIcon />
+      <span className="flex items-center gap-1.5">
+        <FriendsIcon />
+
+        {/* Wer da ist, steht neben dem Symbol — die Zahl oben rechts bleibt dem vorbehalten,
+            was auf eine Antwort wartet. */}
+        {onlineCount > 0 && (
+          <span className="flex items-center gap-1 text-xs">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            {onlineCount}
+          </span>
+        )}
+      </span>
 
       {waiting > 0 && (
         <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
