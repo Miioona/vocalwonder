@@ -1,5 +1,6 @@
 import { LOBBY_CODE_ALPHABET, LOBBY_CODE_LENGTH } from "@vocalwonder/core";
-import type { LobbyMessage } from "@vocalwonder/core";
+import { LOBBY_COLORS } from "@vocalwonder/core";
+import type { LobbyMessage, LobbyScore, QueuedSong } from "@vocalwonder/core";
 
 /** Wie eine Lobby auf dem Server aussieht — ohne Namen und Bilder, die kommen aus den Profilen. */
 export interface Lobby {
@@ -11,6 +12,20 @@ export interface Lobby {
   invitedIds: string[];
   /** Die letzten Nachrichten — wer dazukommt, soll den Faden nicht verlieren. */
   messages: LobbyMessage[];
+  /** Die Songs der Sitzung, in Reihenfolge. */
+  queue: QueuedSong[];
+  /** Ab der ersten Runde steht die Liste fest. */
+  locked: boolean;
+  /** Wer bereit ist. */
+  ready: string[];
+  /** Punktestände des laufenden Songs, nach Nutzer-ID. */
+  scores: Record<string, LobbyScore>;
+  /** Kennung der laufenden Runde — steht in allen Ergebnissen dieses Songs. */
+  roundId?: string;
+  /** Summe über alle bisher gesungenen Songs, nach Nutzer-ID. */
+  totals: Record<string, number>;
+  /** Farbe je Mitglied — einmal vergeben, bleibt sie für die ganze Sitzung. */
+  colors: Record<string, string>;
   createdAt: Date;
 }
 
@@ -47,12 +62,36 @@ export function createLobby(hostId: string): Lobby {
     memberIds: [hostId],
     invitedIds: [],
     messages: [],
+    queue: [],
+    locked: false,
+    ready: [],
+    scores: {},
+    totals: {},
+    colors: { [hostId]: LOBBY_COLORS[0] },
     createdAt: new Date(),
   };
 
   lobbies.set(code, lobby);
   lobbyOfUser.set(hostId, code);
   return lobby;
+}
+
+/**
+ * Die nächste freie Farbe.
+ *
+ * Sind alle vergeben — mehr Leute als Farben —, wird von vorn begonnen. Bei acht Farben und
+ * einer Handvoll Spielern kommt das nicht vor, aber eine leere Farbe wäre schlimmer.
+ */
+export function assignColor(lobby: Lobby, userId: string): string {
+  const existing = lobby.colors[userId];
+  if (existing) return existing;
+
+  const taken = new Set(Object.values(lobby.colors));
+  const free = LOBBY_COLORS.find((color) => !taken.has(color));
+  const color = free ?? LOBBY_COLORS[Object.keys(lobby.colors).length % LOBBY_COLORS.length];
+
+  lobby.colors[userId] = color ?? LOBBY_COLORS[0];
+  return lobby.colors[userId];
 }
 
 export function getLobby(code: string): Lobby | undefined {

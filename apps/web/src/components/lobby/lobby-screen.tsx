@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { toast } from "sonner";
+
 import { GameCard } from "@/components/common/game-card";
+import { ConfirmButton } from "@/components/lobby/confirm-button";
 import { LobbyChat } from "@/components/lobby/lobby-chat";
+import { LobbyQueue } from "@/components/lobby/lobby-queue";
+import { RoundResultScreen } from "@/components/lobby/round-result-screen";
+import { RoundScreen } from "@/components/lobby/round-screen";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/lib/auth/auth-client";
 import { lobbyCommands } from "@/lib/realtime/socket";
 import { useLobbyStore } from "@/stores/useLobbyStore";
 import { cn } from "@/lib/utils";
@@ -17,9 +25,13 @@ import { cn } from "@/lib/utils";
  * verloren — landet man wieder auf der Startseite, statt auf einen leeren Raum zu starren.
  */
 export const LobbyScreen = ({ code }: { code: string }) => {
+  const { data: session } = useSession();
+  const meId = session?.user.id ?? "";
   const lobby = useLobbyStore((state) => state.lobby);
   const known = useLobbyStore((state) => state.known);
   const unread = useLobbyStore((state) => state.unread);
+  const round = useLobbyStore((state) => state.round);
+  const result = useLobbyStore((state) => state.result);
   const [tab, setTab] = useState<"runde" | "chat">("runde");
   const router = useRouter();
 
@@ -39,23 +51,87 @@ export const LobbyScreen = ({ code }: { code: string }) => {
     );
   }
 
+  // Läuft eine Runde, tritt sie an die Stelle der Lobby — gesungen wird im Vollbild.
+  if (round) {
+    return <RoundScreen lobby={lobby} song={round} meId={meId} />;
+  }
+
+  if (result) {
+    return <RoundResultScreen lobby={lobby} result={result} meId={meId} />;
+  }
+
   const leave = async () => {
     await lobbyCommands.leave();
     router.push("/");
   };
 
+  const iAmReady = lobby.ready.includes(meId);
+
+  const toggleReady = async () => {
+    const result = await lobbyCommands.ready(!iAmReady);
+    if (!result.ok) toast(result.message ?? "Ging nicht");
+  };
+
+  const kick = async (userId: string) => {
+    const result = await lobbyCommands.kick(userId);
+    if (!result.ok) toast(result.message ?? "Ging nicht");
+  };
+
   const players = (
     <>
       <GameCard framed title="Dabei">
-        {lobby.players.map((player) => (
-          <div key={player.userId} className="flex items-center gap-3 py-1">
-            <Avatar image={player.image} name={player.playerName} />
-            <span className="min-w-0 flex-1 truncate text-sm">{player.playerName}</span>
-            {player.userId === lobby.hostId && (
-              <span className="text-xs text-muted-foreground">Gastgeber</span>
-            )}
-          </div>
-        ))}
+        {lobby.players.map((player) => {
+          // Anwesende entfernt nur der Gastgeber; wer keine Verbindung hat, darf von jedem
+          // aus der Lobby genommen werden — er ist ohnehin nicht da.
+          const mayKick = player.userId !== meId && (lobby.hostId === meId || !player.connected);
+
+          return (
+            <div key={player.userId} className="flex items-center gap-3 py-1">
+              {/* Der Ring zeigt seine Farbe — dieselbe, in der später seine Stimme läuft. */}
+              <span
+                className="flex shrink-0 rounded-full p-0.5 ring-2"
+                style={{ color: player.color }}
+              >
+                <Avatar image={player.image} name={player.playerName} />
+              </span>
+
+              <span className={cn("min-w-0 flex-1", !player.connected && "opacity-50")}>
+                <span className="block truncate text-sm">{player.playerName}</span>
+                {!player.connected && (
+                  <span className="block text-xs text-muted-foreground">Verbindung verloren</span>
+                )}
+              </span>
+
+              {lobby.ready.includes(player.userId) && (
+                <span className="text-xs text-primary">bereit</span>
+              )}
+
+              {player.userId === lobby.hostId && (
+                <span className="text-xs text-muted-foreground">Gastgeber</span>
+              )}
+
+              {mayKick && (
+                <ConfirmButton
+                  label={`${player.playerName} entfernen`}
+                  confirmLabel="Wirklich?"
+                  onConfirm={() => void kick(player.userId)}
+                />
+              )}
+            </div>
+          );
+        })}
+      </GameCard>
+
+      <GameCard framed title="Songs">
+        <LobbyQueue lobby={lobby} meId={meId} />
+
+        {!lobby.locked && (
+          <Link href="/songs" className="mt-2">
+            <Button variant="outline" size="sm" className="w-full">
+              Songs aussuchen
+            </Button>
+          </Link>
+        )}
       </GameCard>
 
       {lobby.invited.length > 0 && (
@@ -70,9 +146,14 @@ export const LobbyScreen = ({ code }: { code: string }) => {
         </GameCard>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        Songwahl und gemeinsames Singen kommen als Nächstes.
-      </p>
+      <Button
+        size="lg"
+        variant={iAmReady ? "outline" : "default"}
+        disabled={lobby.queue.length === 0}
+        onClick={() => void toggleReady()}
+      >
+        {iAmReady ? "Doch nicht bereit" : "Bereit"}
+      </Button>
     </>
   );
 

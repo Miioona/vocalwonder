@@ -4,6 +4,15 @@
  * Der Song wird über den Hash seiner Datei erkannt, nicht über Pfad oder Titel: Dieselbe
  * Datei ist auf jedem Gerät dieselbe, egal wie sie heißt.
  */
+
+/**
+ * Wie gespielt wurde.
+ *
+ * Ohne diese Unterscheidung stünden später allein gesungene Durchgänge in derselben
+ * Bestenliste wie Duelle — vergleichbar sind sie nicht.
+ */
+export type GameType = "solo" | "duel";
+
 export interface SongScoreInput {
   songHash: string;
   title: string;
@@ -17,6 +26,9 @@ export interface SongScoreInput {
   durationMs: number;
   /** Fassung der Analysekette, mit der der Chart entstanden ist. */
   analysisVersion: number;
+  gameType?: GameType;
+  /** Klammert die Ergebnisse einer Lobby-Sitzung zusammen. */
+  roundId?: string;
 }
 
 export interface SongScore extends SongScoreInput {

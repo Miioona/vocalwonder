@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { FriendsButton } from "@/components/friends/friends-button";
+import { LobbyButton } from "@/components/lobby/lobby-button";
 import { AREAS, lockReason } from "@/components/layout/areas";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useSession } from "@/lib/auth/auth-client";
@@ -79,6 +80,9 @@ export const AppHeader = ({ onOpenMenu }: { onOpenMenu: () => void }) => {
       </nav>
 
       <div className="col-start-3 flex items-center justify-end gap-1">
+        {/* Nur sichtbar, solange man in einer Lobby sitzt — der kurze Weg zurück. */}
+        <LobbyButton />
+
         <UserMenu />
         <FriendsButton />
       </div>

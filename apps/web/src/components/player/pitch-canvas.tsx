@@ -4,8 +4,6 @@ import { useEffect, useMemo, useRef, type RefObject } from "react";
 
 import { allNotes, midiRange, type Chart, type Note } from "@vocalwonder/core";
 
-import type { AudioEngine } from "@/lib/player/audio-engine";
-
 import { DEFAULT_MIDI_HIGH, DEFAULT_MIDI_LOW, drawTimeline } from "@/lib/player/renderer";
 import type { Performance } from "@/lib/player/use-performance";
 import { readRendererColors } from "@/lib/player/renderer-colors";
@@ -15,12 +13,23 @@ import { readRendererColors } from "@/lib/player/renderer-colors";
  * Mikrofon, nicht aus React — sonst würde jeder Frame einen Re-Render auslösen. Deshalb
  * hat diese Komponente auch keinen State.
  */
+/**
+ * Woher die Position im Song kommt.
+ *
+ * Beim Alleinsingen ist das die Wiedergabe auf diesem Rechner. Im Mehrspieler meldet sie der
+ * Besitzer des Songs — dort liegt die Datei, dort läuft die Uhr. Das Spielfeld muss den
+ * Unterschied nicht kennen.
+ */
+export interface Clock {
+  positionMs: () => number;
+}
+
 export const PitchCanvas = ({
-  engine,
+  clock,
   performance,
   chart,
 }: {
-  engine: AudioEngine;
+  clock: Clock;
   /** Gesungene Linie und Bewertung; wird pro Frame gelesen, nie über React. */
   performance: RefObject<Performance>;
   chart?: Chart;
@@ -70,7 +79,7 @@ export const PitchCanvas = ({
     });
 
     let frame = requestAnimationFrame(function loop() {
-      const positionMs = engine.positionMs();
+      const positionMs = clock.positionMs();
       const trail = performance.current.trail;
       const hits = performance.current.scorer?.ratios();
 
@@ -93,7 +102,7 @@ export const PitchCanvas = ({
       observer.disconnect();
       themeObserver.disconnect();
     };
-  }, [engine, performance, notes, midiLow, midiHigh]);
+  }, [clock, performance, notes, midiLow, midiHigh]);
 
   return <canvas ref={canvasRef} className="size-full" />;
 };

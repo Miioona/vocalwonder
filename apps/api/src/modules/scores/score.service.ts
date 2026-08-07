@@ -14,6 +14,8 @@ type ScoreSource = {
   totalNotes: number;
   durationMs: number;
   analysisVersion: number;
+  gameType?: "solo" | "duel";
+  roundId?: string;
   createdAt: Date;
 };
 
@@ -30,6 +32,8 @@ function toSongScore(doc: ScoreSource): SongScore {
     totalNotes: doc.totalNotes,
     durationMs: doc.durationMs,
     analysisVersion: doc.analysisVersion,
+    gameType: doc.gameType,
+    roundId: doc.roundId,
     playedAt: doc.createdAt.toISOString(),
   };
 }
