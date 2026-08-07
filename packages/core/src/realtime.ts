@@ -1,6 +1,17 @@
-import type { LobbyAck, LobbyInvite, LobbyMessage, LobbyState } from "./lobby";
+import type {
+  LobbyAck,
+  LobbyInvite,
+  LobbyMessage,
+  LobbyScore,
+  LobbyState,
+  QueuedSong,
+  QueuedSongInput,
+  RoundResult,
+} from "./lobby";
 import { LOBBY_EVENTS } from "./lobby";
 import type { PublicPlayer } from "./profile";
+import type { RtcSignalIn, RtcSignalOut } from "./rtc";
+import { RTC_EVENTS } from "./rtc";
 
 /**
  * Was über die offene Verbindung läuft — der Vertrag zwischen Backend und Browser.
@@ -74,6 +85,11 @@ export interface ServerEvents {
   [LOBBY_EVENTS.declined]: (payload: { player: PublicPlayer }) => void;
   [LOBBY_EVENTS.messages]: (payload: LobbyMessage[]) => void;
   [LOBBY_EVENTS.message]: (payload: LobbyMessage) => void;
+  [LOBBY_EVENTS.start]: (payload: { song: QueuedSong }) => void;
+  [LOBBY_EVENTS.scores]: (payload: LobbyScore[]) => void;
+  [LOBBY_EVENTS.results]: (payload: RoundResult) => void;
+
+  [RTC_EVENTS.signal]: (payload: RtcSignalIn) => void;
 }
 
 /**
@@ -86,8 +102,19 @@ export interface ClientEvents {
   [LOBBY_EVENTS.decline]: (code: string, ack: LobbyAck) => void;
   [LOBBY_EVENTS.leave]: (ack: LobbyAck) => void;
   [LOBBY_EVENTS.send]: (text: string, ack: LobbyAck) => void;
+  [LOBBY_EVENTS.addSong]: (song: QueuedSongInput, ack: LobbyAck) => void;
+  [LOBBY_EVENTS.removeSong]: (songId: string, ack: LobbyAck) => void;
+  [LOBBY_EVENTS.moveSong]: (songId: string, toIndex: number, ack: LobbyAck) => void;
+  [LOBBY_EVENTS.kick]: (userId: string, ack: LobbyAck) => void;
+  [LOBBY_EVENTS.ready]: (ready: boolean, ack: LobbyAck) => void;
+  /** Ohne Antwort: Der Stand kommt gleich wieder, eine verlorene Meldung ist belanglos. */
+  [LOBBY_EVENTS.score]: (score: { points: number; ratio: number }) => void;
+  [LOBBY_EVENTS.finished]: () => void;
   /** Was ich gerade tue — nur das, was der Server nicht selbst weiß. */
   [REALTIME_EVENTS.activity]: (activity: Activity) => void;
+
+  /** Vermittlung der direkten Verbindung — der Server reicht nur durch. */
+  [RTC_EVENTS.signal]: (payload: RtcSignalOut) => void;
 }
 
 /** Der Raum eines Nutzers. Ereignisse gehen an Räume, nie an einzelne Verbindungen: Wer die

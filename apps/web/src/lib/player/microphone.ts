@@ -57,6 +57,37 @@ export interface PitchSample {
 
 const SILENT: PitchSample = { clarity: 0, level: 0 };
 
+/**
+ * Den Mikrofonstrom holen — notfalls ohne Gerätewunsch.
+ *
+ * Geräte-IDs gelten je Browser und Profil. Steht in den Einstellungen eine ID aus einem
+ * anderen Browser, kennt dieser sie nicht. Chrome nimmt dann stillschweigend das
+ * Standardgerät, Firefox bricht ab ("The object can not be found here") — deshalb hier ein
+ * ausdrücklicher zweiter Versuch, statt sich auf das Wohlwollen des Browsers zu verlassen.
+ */
+async function openStream(deviceId?: string): Promise<MediaStream> {
+  // Die Browser-DSP muss aus: Echokompensation und Rauschunterdrückung zerstören die
+  // Grundfrequenz, und die automatische Aussteuerung pumpt den Pegel. Damit wird die
+  // Tonhöhenerkennung unbrauchbar.
+  const base: MediaTrackConstraints = {
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+  };
+
+  if (!deviceId) return navigator.mediaDevices.getUserMedia({ audio: base });
+
+  try {
+    return await navigator.mediaDevices.getUserMedia({ audio: { ...base, deviceId } });
+  } catch (err) {
+    // Eine Absage des Users darf nicht umgangen werden — nur ein unbekanntes Gerät.
+    if (err instanceof DOMException && err.name === "NotAllowedError") throw err;
+
+    console.error("[mic] Gerät nicht gefunden, nehme das Standardgerät", err);
+    return navigator.mediaDevices.getUserMedia({ audio: base });
+  }
+}
+
 export class Microphone {
   private stream?: MediaStream;
   private source?: MediaStreamAudioSourceNode;
@@ -73,16 +104,7 @@ export class Microphone {
     // Die Browser-DSP muss aus: Echokompensation und Rauschunterdrückung zerstören die
     // Grundfrequenz, und die automatische Aussteuerung pumpt den Pegel. Damit wird die
     // Tonhöhenerkennung unbrauchbar.
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-        // Kein `exact`: Ist das gemerkte Gerät nicht mehr da, nimmt der Browser das
-        // Standardgerät, statt den Zugriff komplett zu verweigern.
-        ...(options.deviceId ? { deviceId: options.deviceId } : {}),
-      },
-    });
+    this.stream = await openStream(options.deviceId);
 
     const analyser = context.createAnalyser();
     analyser.fftSize = FFT_SIZE;

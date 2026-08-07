@@ -597,6 +597,11 @@ Fehlersuche findet auf fremden Rechnern statt.
 - [ ] **M4. Tonübertragung per WebRTC** — Gastgeber überträgt, die anderen singen mit.
 - [ ] **M5. Gemeinsamer Start und Punktestände** — Startzeitpunkt vom Server, danach laufender
       Abgleich der Punkte über die Socket-Verbindung.
+- [ ] **M6. Endbildschirm nach jedem Song** — besprochen am 06.08.2026. Nach dem Song landet
+      niemand direkt in der Lobby, sondern auf einem Endbildschirm ähnlich dem im Einzelspiel:
+      Wertungen und **Plätze aller Mitspieler**, dazu der **nächste Song** aus der Liste. Von
+      dort zwei Wege — gleich wieder **bereit** drücken oder **zurück in die Lobby**. Wer in
+      die Lobby geht, kann auch dort bereit drücken; beides führt zum selben Start.
 
 **Zustand der Lobby:** im Arbeitsspeicher des Servers, wie die Anwesenheit — Lobbys sind
 kurzlebig, und wenn der Dienst einschläft, sind ohnehin alle Verbindungen weg. Der Zugriff
@@ -705,6 +710,15 @@ nicht lösen:
 ## Offene Kleinigkeiten
 
 Nichts davon blockiert, aber es sollte nicht verloren gehen:
+
+- [ ] **Mikrofon in Firefox** — dort schlägt `getUserMedia` mit `NotFoundError` fehl ("The
+      object can not be found here"), und die Geräteliste zeigt nur "Systemvorgabe". Ursache
+      ist meist die fehlende Freigabe auf Systemebene (macOS: Systemeinstellungen →
+      Datenschutz & Sicherheit → Mikrofon), die Firefox nicht selbst erklärt. Zu tun: den
+      Fehlerfall unterscheiden (kein Gerät / verweigert / kein Zugriff auf Systemebene) und
+      dem User **eine kurze Anleitung** zeigen statt einer Fehlermeldung. Andere Browser
+      vorher durchprobieren — gut möglich, dass Safari eigene Eigenheiten hat.
+      Getestet am 06.08.2026: Mit zwei Chrome-Fenstern läuft alles.
 
 - [ ] `apps/web/tsconfig.json` erbt nicht von `tsconfig.base.json` (Rest von `create-next-app`).
       Dadurch gelten im Frontend weder `verbatimModuleSyntax` noch `noUnusedLocals` noch

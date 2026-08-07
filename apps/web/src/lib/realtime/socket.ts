@@ -1,6 +1,7 @@
 "use client";
 
 import { LOBBY_EVENTS } from "@vocalwonder/core";
+import type { QueuedSongInput } from "@vocalwonder/core";
 import type { ClientEvents, ServerEvents } from "@vocalwonder/core";
 import type { Socket } from "socket.io-client";
 
@@ -16,6 +17,11 @@ let socket: AppSocket | undefined;
 
 export function setSocket(next: AppSocket | undefined): void {
   socket = next;
+}
+
+/** Für alles, was mehr braucht als einen Befehl mit Antwort — etwa die Vermittlung. */
+export function getSocket(): AppSocket | undefined {
+  return socket;
 }
 
 /**
@@ -39,10 +45,25 @@ function command<E extends keyof ClientEvents>(
   });
 }
 
+/** Der eigene Song ist durch. Ohne Antwort — der Server verteilt das Ergebnis von sich aus. */
+export function sendFinished(): void {
+  getSocket()?.emit(LOBBY_EVENTS.finished);
+}
+
+/** Ohne Antwort — der nächste Stand kommt gleich wieder. */
+export function sendScore(points: number, ratio: number): void {
+  getSocket()?.emit(LOBBY_EVENTS.score, { points, ratio });
+}
+
 export const lobbyCommands = {
   invite: (userId: string) => command(LOBBY_EVENTS.invitePlayer, userId),
   accept: (code: string) => command(LOBBY_EVENTS.accept, code),
   decline: (code: string) => command(LOBBY_EVENTS.decline, code),
   leave: () => command(LOBBY_EVENTS.leave),
   send: (text: string) => command(LOBBY_EVENTS.send, text),
+  addSong: (song: QueuedSongInput) => command(LOBBY_EVENTS.addSong, song),
+  removeSong: (songId: string) => command(LOBBY_EVENTS.removeSong, songId),
+  moveSong: (songId: string, toIndex: number) => command(LOBBY_EVENTS.moveSong, songId, toIndex),
+  kick: (userId: string) => command(LOBBY_EVENTS.kick, userId),
+  ready: (ready: boolean) => command(LOBBY_EVENTS.ready, ready),
 };

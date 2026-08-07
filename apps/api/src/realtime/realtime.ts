@@ -9,7 +9,12 @@ import { env } from "../config/env.js";
 import { getAuth } from "../modules/auth/auth.js";
 import { getFriendIds } from "../modules/friends/friend.service.js";
 import { touchLastSeen } from "../modules/profile/profile.service.js";
-import { registerLobbyHandlers, scheduleLobbyCleanup, sendCurrentLobby } from "./lobby-handlers.js";
+import {
+  refreshLobby,
+  registerLobbyHandlers,
+  scheduleLobbyCleanup,
+  sendCurrentLobby,
+} from "./lobby-handlers.js";
 import {
   activityOf,
   addConnection,
@@ -73,6 +78,8 @@ export function attachRealtime(server: HttpServer): void {
 
       if (isFirst) {
         announce(friendIds, { userId, online: true, activity: activityOf(userId) });
+        // Wer wiederkommt, soll in der Lobby nicht weiter als "weg" stehen.
+        await refreshLobby(io as Server<ClientEvents, ServerEvents>, userId);
       }
     })().catch((err: unknown) => console.error("[realtime] Verbindungsaufbau", err));
 
@@ -99,7 +106,11 @@ export function attachRealtime(server: HttpServer): void {
         announce(friendIds, { userId, online: false, lastSeenAt: lastSeenAt.toISOString() });
 
         // Nicht sofort aus der Lobby werfen — ein Neuladen sieht genauso aus wie ein Weggehen.
-        if (io) scheduleLobbyCleanup(io, userId);
+        // Die Lobby erfährt aber sofort davon, damit dort "Verbindung verloren" steht.
+        if (io) {
+          await refreshLobby(io, userId);
+          scheduleLobbyCleanup(io, userId);
+        }
       })().catch((err: unknown) => console.error("[realtime] Verbindungsabbau", err));
     });
   });

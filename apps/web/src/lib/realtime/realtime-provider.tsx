@@ -3,7 +3,13 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
-import { LOBBY_EVENTS, REALTIME_EVENTS, type Activity, type FriendEvent } from "@vocalwonder/core";
+import {
+  LOBBY_EVENTS,
+  REALTIME_EVENTS,
+  RTC_EVENTS,
+  type Activity,
+  type FriendEvent,
+} from "@vocalwonder/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
@@ -12,6 +18,7 @@ import { useSession } from "@/lib/auth/auth-client";
 import { CONFIG } from "@/lib/config/config";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import { setSocket, type AppSocket } from "@/lib/realtime/socket";
+import { handleSignal } from "@/lib/rtc/broadcast";
 import { useLobbyStore } from "@/stores/useLobbyStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useRealtimeStore, type QueuedEvent } from "@/stores/useRealtimeStore";
@@ -89,6 +96,13 @@ export const RealtimeProvider = ({ children }: { children: React.ReactNode }) =>
 
     socket.on(LOBBY_EVENTS.messages, (messages) => useLobbyStore.getState().setMessages(messages));
     socket.on(LOBBY_EVENTS.message, (message) => useLobbyStore.getState().addMessage(message));
+
+    socket.on(LOBBY_EVENTS.start, ({ song }) => useLobbyStore.getState().startRound(song));
+    socket.on(LOBBY_EVENTS.scores, (scores) => useLobbyStore.getState().setScores(scores));
+    socket.on(LOBBY_EVENTS.results, (result) => useLobbyStore.getState().setResult(result));
+
+    // Der Verbindungsaufbau zwischen zwei Browsern — hier nur durchgereicht.
+    socket.on(RTC_EVENTS.signal, ({ from, signal }) => handleSignal(from, signal));
 
     // Was der Server nicht sehen kann: ob hier gerade gesungen wird. Beim Verbinden einmal,
     // danach bei jedem Wechsel.

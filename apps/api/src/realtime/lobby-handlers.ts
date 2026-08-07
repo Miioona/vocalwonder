@@ -1,15 +1,22 @@
-import { LOBBY_EVENTS, userRoom } from "@vocalwonder/core";
+import { LOBBY_EVENTS, RTC_EVENTS, userRoom } from "@vocalwonder/core";
 import type { ClientEvents, LobbyAck, LobbyMessage, ServerEvents } from "@vocalwonder/core";
 import type { Server, Socket } from "socket.io";
 
 import {
   LobbyError,
   acceptInvite,
+  addSong,
+  kickMember,
+  moveSong,
+  removeSong,
   declineInvite,
+  finishRound,
   getLobbyOfUser,
   invitePlayer,
   leaveLobby,
   postMessage,
+  setReady,
+  setScore,
   systemMessage,
   toLobbyState,
 } from "../modules/lobby/lobby.service.js";
@@ -86,6 +93,108 @@ export function registerLobbyHandlers(io: LobbyServer, socket: LobbySocket, user
     });
   });
 
+  socket.on(LOBBY_EVENTS.addSong, (song, ack) => {
+    void run(ack, async () => {
+      const lobby = addSong(userId, song);
+      await broadcast(io, lobby);
+
+      const player = await getPublicPlayer(userId);
+      announceMessage(
+        io,
+        lobby,
+        systemMessage(lobby, `${player?.playerName ?? "Jemand"} hat „${song.title}" eingestellt`),
+      );
+    });
+  });
+
+  socket.on(LOBBY_EVENTS.removeSong, (songId, ack) => {
+    void run(ack, async () => {
+      await broadcast(io, removeSong(userId, songId));
+    });
+  });
+
+  socket.on(LOBBY_EVENTS.moveSong, (songId, toIndex, ack) => {
+    void run(ack, async () => {
+      await broadcast(io, moveSong(userId, songId, toIndex));
+    });
+  });
+
+  socket.on(LOBBY_EVENTS.kick, (targetId, ack) => {
+    void run(ack, async () => {
+      const target = await getPublicPlayer(targetId);
+      const { lobby, closed } = kickMember(userId, targetId);
+
+      // Der Entfernte sitzt in keiner Lobby mehr — das muss er auch erfahren.
+      io.to(userRoom(targetId)).emit(LOBBY_EVENTS.state, null);
+
+      if (closed) {
+        close(io, lobby);
+        return;
+      }
+
+      await broadcast(io, lobby);
+      announceMessage(
+        io,
+        lobby,
+        systemMessage(lobby, `${target?.playerName ?? "Jemand"} wurde entfernt`),
+      );
+      await announceActivity(targetId);
+    });
+  });
+
+  /**
+   * Vermittlung durchreichen.
+   *
+   * Der Server liest den Inhalt nicht — er prüft nur, dass beide in derselben Lobby sitzen.
+   * Ohne diese Prüfung könnte jeder jedem Verbindungsanfragen schicken.
+   */
+  socket.on(RTC_EVENTS.signal, ({ to, signal }) => {
+    const lobby = getLobbyOfUser(userId);
+    if (!lobby?.memberIds.includes(to)) return;
+
+    io.to(userRoom(to)).emit(RTC_EVENTS.signal, { from: userId, signal });
+  });
+
+  socket.on(LOBBY_EVENTS.ready, (ready, ack) => {
+    void run(ack, async () => {
+      const { lobby, start } = setReady(userId, ready);
+      await broadcast(io, lobby);
+
+      if (!start) return;
+
+      const song = lobby.queue[0];
+      if (!song) return;
+
+      announceMessage(io, lobby, systemMessage(lobby, `Los geht's: „${song.title}"`));
+      for (const memberId of lobby.memberIds) {
+        io.to(userRoom(memberId)).emit(LOBBY_EVENTS.start, { song });
+      }
+    });
+  });
+
+  /** Kein Rückkanal nötig: Der nächste Stand kommt in einer Sekunde ohnehin. */
+  socket.on(LOBBY_EVENTS.score, ({ points, ratio }) => {
+    const lobby = setScore(userId, points, ratio);
+    if (!lobby) return;
+
+    const scores = Object.values(lobby.scores);
+    for (const memberId of lobby.memberIds) {
+      io.to(userRoom(memberId)).emit(LOBBY_EVENTS.scores, scores);
+    }
+  });
+
+  socket.on(LOBBY_EVENTS.finished, () => {
+    const result = finishRound(userId);
+    const lobby = getLobbyOfUser(userId);
+    if (!result || !lobby) return;
+
+    for (const memberId of lobby.memberIds) {
+      io.to(userRoom(memberId)).emit(LOBBY_EVENTS.results, result);
+    }
+
+    void broadcast(io, lobby).catch((err: unknown) => console.error("[lobby]", err));
+  });
+
   socket.on(LOBBY_EVENTS.leave, (ack) => {
     void run(ack, async () => {
       const player = await getPublicPlayer(userId);
@@ -114,9 +223,11 @@ export function registerLobbyHandlers(io: LobbyServer, socket: LobbySocket, user
  * Sofort hinauszuwerfen wäre falsch — ein Neuladen der Seite trennt die Verbindung genauso
  * wie das Schließen des Fensters, und wer neu lädt, soll wieder in seiner Lobby landen.
  * Nie hinauszuwerfen wäre auch falsch, dann sitzen Geister in der Runde und blockieren sich
- * selbst das Spielen. Also eine Minute warten und schauen, ob er wiederkommt.
+ * selbst das Spielen. Fünf Minuten decken einen Router-Neustart oder einen Netzwechsel am
+ * Telefon ab; wer nicht so lange warten will, kann den Betreffenden vorher entfernen —
+ * jemanden ohne Verbindung darf jeder aus der Lobby nehmen.
  */
-const GRACE_MS = 60_000;
+const GRACE_MS = 5 * 60_000;
 
 export function scheduleLobbyCleanup(io: LobbyServer, userId: string): void {
   setTimeout(() => {
@@ -128,6 +239,12 @@ export function scheduleLobbyCleanup(io: LobbyServer, userId: string): void {
       else if (result) await broadcast(io, result.lobby);
     })().catch((err: unknown) => console.error("[lobby] Aufräumen", err));
   }, GRACE_MS);
+}
+
+/** Den Stand neu verteilen, wenn sich außerhalb der Befehle etwas geändert hat — etwa die Verbindung. */
+export async function refreshLobby(io: LobbyServer, userId: string): Promise<void> {
+  const lobby = getLobbyOfUser(userId);
+  if (lobby) await broadcast(io, lobby);
 }
 
 /** Beim Verbinden: Wer schon in einer Lobby sitzt, bekommt sie sofort — für den Wiedereinstieg. */

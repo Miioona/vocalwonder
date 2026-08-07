@@ -1,4 +1,14 @@
-import type { LobbyInvite, LobbyMessage, LobbyState } from "@vocalwonder/core";
+import type { ScoreSnapshot } from "@vocalwonder/core";
+import type {
+  LobbyInvite,
+  LobbyMessage,
+  LobbyScore,
+  LobbyState,
+  QueuedSong,
+  RoundResult,
+} from "@vocalwonder/core";
+
+import type { AudioFile } from "@/lib/song-explorer/types";
 import { create } from "zustand";
 
 interface LobbyStoreState {
@@ -19,11 +29,34 @@ interface LobbyStoreState {
   messages: LobbyMessage[];
   /** Nachrichten, die seit dem letzten Blick in den Chat dazugekommen sind. */
   unread: number;
+  /** Der Song, der gerade läuft — oder `null` zwischen den Runden. */
+  round: QueuedSong | null;
+  /** Punktestände des laufenden Songs, vom Server verteilt. */
+  scores: LobbyScore[];
+  /** Mein eigener Stand am Ende des Songs — der Endbildschirm speichert ihn. */
+  mySnapshot: ScoreSnapshot | null;
+  /** Das Ergebnis des zuletzt gesungenen Songs — steht bis zum Verlassen des Endbildschirms. */
+  result: RoundResult | null;
+  /**
+   * Meine eigenen Dateien zu den Songs, die ich eingestellt habe.
+   *
+   * Nur hier im Speicher: Ein Dateizugriff lässt sich nicht in die Lobby schicken. Beim
+   * Neuladen ist die Zuordnung weg — dann kann ich meinen eigenen Song nicht abspielen und
+   * muss ihn neu einstellen.
+   */
+  ownFiles: Record<string, AudioFile>;
 
   setLobby: (lobby: LobbyState | null) => void;
   setMessages: (messages: LobbyMessage[]) => void;
   addMessage: (message: LobbyMessage) => void;
   clearUnread: () => void;
+  setScores: (scores: LobbyScore[]) => void;
+  setMySnapshot: (snapshot: ScoreSnapshot) => void;
+  setResult: (result: RoundResult) => void;
+  clearResult: () => void;
+  startRound: (song: QueuedSong) => void;
+  endRound: () => void;
+  rememberFile: (songHash: string, file: AudioFile) => void;
   addInvite: (invite: LobbyInvite) => void;
   removeInvite: (code: string) => void;
   reset: () => void;
@@ -41,15 +74,34 @@ export const useLobbyStore = create<LobbyStoreState>((set) => ({
   invites: [],
   messages: [],
   unread: 0,
+  round: null,
+  scores: [],
+  mySnapshot: null,
+  result: null,
+  ownFiles: {},
 
   setLobby: (lobby) =>
     // Ohne Lobby gibt es auch keinen Verlauf mehr — sonst stünde er in der nächsten drin.
-    set(lobby ? { lobby, known: true } : { lobby: null, known: true, messages: [], unread: 0 }),
+    set(
+      lobby
+        ? { lobby, known: true }
+        : { lobby: null, known: true, messages: [], unread: 0, round: null, result: null },
+    ),
 
   setMessages: (messages) => set({ messages, unread: 0 }),
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message], unread: state.unread + 1 })),
   clearUnread: () => set({ unread: 0 }),
+
+  setScores: (scores) => set({ scores }),
+  setMySnapshot: (mySnapshot) => set({ mySnapshot }),
+  // Ein neuer Song räumt das alte Ergebnis weg.
+  startRound: (song) => set({ round: song, scores: [], result: null, mySnapshot: null }),
+  setResult: (result) => set({ result, round: null }),
+  clearResult: () => set({ result: null }),
+  endRound: () => set({ round: null }),
+  rememberFile: (songHash, file) =>
+    set((state) => ({ ownFiles: { ...state.ownFiles, [songHash]: file } })),
 
   addInvite: (invite) =>
     set((state) => ({
